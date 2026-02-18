@@ -367,7 +367,10 @@ export async function sendInternalNotification({
   const monitorEmail = process.env.INTERNAL_LEADS_MONITOR_EMAIL;
 
   if (!monitorEmail) {
-    throw new Error("INTERNAL_LEADS_MONITOR_EMAIL is required for manual gate workflow");
+    console.warn(
+      "INTERNAL_LEADS_MONITOR_EMAIL is not set; skipping internal lead notification. Set it in Vercel env for manual gate workflow."
+    );
+    return;
   }
 
   const locale = lead.locale;

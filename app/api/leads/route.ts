@@ -23,6 +23,13 @@ function getClientIp(request: NextRequest): string {
   );
 }
 
+/** True if the error is due to a missing DB column (e.g. migration 005 not run in prod). */
+function isMissingColumnError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  const code = (err as { code?: string })?.code;
+  return code === "42703" || /column .* does not exist/i.test(msg) || /nurture_/i.test(msg);
+}
+
 
 /**
  * Build a silent fake 201 response.
@@ -129,36 +136,62 @@ export async function POST(request: NextRequest) {
     const intentLevel = deriveIntentLevel(lead.timeline, lead.budget_range);
     const sql = getDb();
 
-    // Safety: Stop nurture emails for existing leads with same email
-    await sql`
-      UPDATE leads 
-      SET nurture_completed = true 
-      WHERE email = ${lead.email} AND nurture_completed = false
-    `;
+    let leadId: string;
 
-    // Set nurture fields based on intent level
-    const isLowIntent = intentLevel === "low";
-    const nurtureStage = isLowIntent ? 1 : 0;
-    const nurtureNextAt = isLowIntent ? now : null;
+    try {
+      // Safety: Stop nurture emails for existing leads with same email (requires migration 005)
+      await sql`
+        UPDATE leads 
+        SET nurture_completed = true 
+        WHERE email = ${lead.email} AND nurture_completed = false
+      `;
 
-    const rows = await sql`
-      INSERT INTO leads (
-        first_name, last_name, phone, email,
-        age_range, tried_ivf, timeline, budget_range, city,
-        message, gdpr_consent, locale, ip_hash,
-        intent_level, status, created_at, updated_at,
-        nurture_stage, nurture_next_at, nurture_completed
-      ) VALUES (
-        ${lead.first_name}, ${lead.last_name}, ${lead.phone}, ${lead.email},
-        ${lead.age_range}, ${lead.tried_ivf}, ${lead.timeline}, ${lead.budget_range}, ${lead.city},
-        ${lead.message ?? null}, ${lead.gdpr_consent}, ${lead.locale}, ${ipHash},
-        ${intentLevel}, ${"new_unverified"}, ${now}, ${now},
-        ${nurtureStage}, ${nurtureNextAt}, ${false}
-      )
-      RETURNING id, created_at
-    `;
+      // Set nurture fields based on intent level (requires migration 005)
+      const isLowIntent = intentLevel === "low";
+      const nurtureStage = isLowIntent ? 1 : 0;
+      const nurtureNextAt = isLowIntent ? now : null;
 
-    const leadId = rows[0].id as string;
+      const rows = await sql`
+        INSERT INTO leads (
+          first_name, last_name, phone, email,
+          age_range, tried_ivf, timeline, budget_range, city,
+          message, gdpr_consent, locale, ip_hash,
+          intent_level, status, created_at, updated_at,
+          nurture_stage, nurture_next_at, nurture_completed
+        ) VALUES (
+          ${lead.first_name}, ${lead.last_name}, ${lead.phone}, ${lead.email},
+          ${lead.age_range}, ${lead.tried_ivf}, ${lead.timeline}, ${lead.budget_range}, ${lead.city},
+          ${lead.message ?? null}, ${lead.gdpr_consent}, ${lead.locale}, ${ipHash},
+          ${intentLevel}, ${"new_unverified"}, ${now}, ${now},
+          ${nurtureStage}, ${nurtureNextAt}, ${false}
+        )
+        RETURNING id, created_at
+      `;
+
+      leadId = rows[0].id as string;
+    } catch (dbErr) {
+      // Production may not have migration 005 (nurture columns) yet — fallback to insert without them
+      if (isMissingColumnError(dbErr)) {
+        const fallbackRows = await sql`
+          INSERT INTO leads (
+            first_name, last_name, phone, email,
+            age_range, tried_ivf, timeline, budget_range, city,
+            message, gdpr_consent, locale, ip_hash,
+            intent_level, status, created_at, updated_at
+          ) VALUES (
+            ${lead.first_name}, ${lead.last_name}, ${lead.phone}, ${lead.email},
+            ${lead.age_range}, ${lead.tried_ivf}, ${lead.timeline}, ${lead.budget_range}, ${lead.city},
+            ${lead.message ?? null}, ${lead.gdpr_consent}, ${lead.locale}, ${ipHash},
+            ${intentLevel}, ${"new_unverified"}, ${now}, ${now}
+          )
+          RETURNING id, created_at
+        `;
+        leadId = fallbackRows[0]?.id as string;
+        if (!leadId) throw dbErr;
+      } else {
+        throw dbErr;
+      }
+    }
 
     // Manual gate workflow: send only to internal monitor + user confirmation
     const { getResend, getFromAddress, buildUserHtml } = await import("@/lib/email");
