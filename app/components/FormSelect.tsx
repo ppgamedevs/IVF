@@ -129,12 +129,11 @@ export default function FormSelect({
           aria-controls={`${id}-listbox`}
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
-          className={`w-full px-4 py-3 rounded-xl border bg-white text-left text-base transition-colors duration-200 flex items-center justify-between gap-2 ${
+          className={`w-full px-4 py-3 rounded-xl border bg-white text-left text-base transition-colors duration-200 flex items-center justify-between gap-2 outline-none ${
             error ? "border-red-300" : open ? "border-primary-400" : "border-medical-border"
           } ${!value ? "text-medical-muted/60" : "text-medical-heading"} ${
             disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
           }`}
-          style={open ? { boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.15)" } : undefined}
         >
           <span className="truncate">{selectedLabel || placeholder}</span>
           <svg

@@ -50,7 +50,7 @@ function isValidPhone(raw: string): boolean {
 }
 
 const inputClasses =
-  "w-full px-4 py-3 rounded-xl border border-medical-border bg-white text-medical-heading placeholder:text-medical-muted/60 focus:border-primary-400 transition-colors duration-200 text-base";
+  "w-full px-4 py-3 rounded-xl border border-medical-border bg-white text-medical-heading placeholder:text-medical-muted/60 focus:border-primary-400 focus:outline-none transition-colors duration-200 text-base";
 
 const labelClasses = "block text-sm font-medium text-medical-text mb-1.5";
 

@@ -56,9 +56,10 @@ body {
   color: #1e3a5f;
 }
 
+/* No focus ring/box-shadow on form controls to avoid clipping artifacts on blur */
 input:focus,
 select:focus,
-textarea:focus {
+textarea:focus,
+button:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
