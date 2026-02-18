@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/internal/run-nurture",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}

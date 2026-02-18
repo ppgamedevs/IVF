@@ -1,0 +1,547 @@
+"use client";
+
+import { useState, useRef, useEffect, useCallback, type FormEvent } from "react";
+import { useTranslations, useLocale } from "next-intl";
+import FormSelect from "./FormSelect";
+import {
+  trackFormStart,
+  trackFormSubmit,
+  trackFormSubmitted,
+  trackFormError,
+  trackGenerateLead,
+  trackConversion,
+} from "@/lib/analytics";
+
+interface FormData {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  ageRange: string;
+  triedIVF: string;
+  timeline: string;
+  budgetRange: string;
+  city: string;
+  message: string;
+  gdprConsent: boolean;
+}
+
+const initialFormData: FormData = {
+  firstName: "",
+  lastName: "",
+  phone: "",
+  email: "",
+  ageRange: "",
+  triedIVF: "",
+  timeline: "",
+  budgetRange: "",
+  city: "",
+  message: "",
+  gdprConsent: false,
+};
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isValidPhone(raw: string): boolean {
+  const stripped = raw.replace(/[\s\-\.\(\)]/g, "");
+  if (!/^(\+?40|0)/.test(stripped)) return false;
+  const digits = stripped.replace(/\D/g, "");
+  return digits.length >= 10 && digits.length <= 13;
+}
+
+const inputClasses =
+  "w-full px-4 py-3 rounded-xl border border-medical-border bg-white text-medical-heading placeholder:text-medical-muted/60 focus:border-primary-400 transition-colors duration-200 text-base";
+
+const labelClasses = "block text-sm font-medium text-medical-text mb-1.5";
+
+export default function LeadForm() {
+  const t = useTranslations("form");
+  const locale = useLocale();
+  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const honeypotRef = useRef<HTMLInputElement>(null);
+  const renderedAtRef = useRef<number>(Date.now());
+  const formStartedRef = useRef(false);
+
+  useEffect(() => {
+    renderedAtRef.current = Date.now();
+  }, []);
+
+  const handleFormInteraction = useCallback(() => {
+    if (!formStartedRef.current) {
+      formStartedRef.current = true;
+      trackFormStart();
+    }
+  }, []);
+
+  const ageRanges = [
+    { value: "under-30", label: t("ageUnder30") },
+    { value: "30-34", label: t("age3034") },
+    { value: "35-37", label: t("age3537") },
+    { value: "38-40", label: t("age3840") },
+    { value: "41+", label: t("age41plus") },
+  ];
+
+  const timelines = [
+    { value: "asap", label: t("timelineAsap") },
+    { value: "1-3months", label: t("timeline1to3") },
+    { value: "researching", label: t("timelineResearching") },
+  ];
+
+  const budgetRanges = [
+    { value: "under-10k", label: t("budgetUnder10k") },
+    { value: "10k-20k", label: t("budget10kTo20k") },
+    { value: "over-20k", label: t("budgetOver20k") },
+    { value: "prefer-discuss", label: t("budgetPreferDiscuss") },
+  ];
+
+  function validate(): boolean {
+    const newErrors: Partial<Record<keyof FormData, string>> = {};
+
+    if (!formData.firstName.trim()) newErrors.firstName = t("errorFirstName");
+    if (!formData.lastName.trim()) newErrors.lastName = t("errorLastName");
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = t("errorPhone");
+    } else if (!isValidPhone(formData.phone)) {
+      newErrors.phone = t("errorPhoneInvalid");
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = t("errorEmail");
+    } else if (!EMAIL_REGEX.test(formData.email)) {
+      newErrors.email = t("errorEmailInvalid");
+    }
+
+    if (!formData.ageRange) newErrors.ageRange = t("errorAgeRange");
+    if (!formData.triedIVF) newErrors.triedIVF = t("errorTriedIVF");
+    if (!formData.timeline) newErrors.timeline = t("errorTimeline");
+    if (!formData.budgetRange) newErrors.budgetRange = t("errorBudgetRange");
+    if (!formData.city.trim()) newErrors.city = t("errorCity");
+    if (!formData.gdprConsent) newErrors.gdprConsent = t("errorGdpr");
+
+    setErrors(newErrors);
+    const errorKeys = Object.keys(newErrors);
+    if (errorKeys.length > 0) {
+      trackFormError(errorKeys);
+    }
+    return errorKeys.length === 0;
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setServerError(null);
+
+    if (!validate()) return;
+
+    trackFormSubmit();
+    setSubmitting(true);
+
+    try {
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: formData.firstName.trim(),
+          last_name: formData.lastName.trim(),
+          phone: formData.phone.trim(),
+          email: formData.email.trim(),
+          age_range: formData.ageRange,
+          tried_ivf: formData.triedIVF,
+          timeline: formData.timeline,
+          budget_range: formData.budgetRange,
+          city: formData.city.trim(),
+          message: formData.message.trim() || undefined,
+          gdpr_consent: formData.gdprConsent,
+          locale,
+          _company: honeypotRef.current?.value || "",
+          _rendered: renderedAtRef.current,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (result.fields) {
+          const fieldErrors: Partial<Record<keyof FormData, string>> = {};
+          const fieldMap: Record<string, keyof FormData> = {
+            first_name: "firstName",
+            last_name: "lastName",
+            phone: "phone",
+            email: "email",
+            age_range: "ageRange",
+            tried_ivf: "triedIVF",
+            timeline: "timeline",
+            budget_range: "budgetRange",
+            city: "city",
+            gdpr_consent: "gdprConsent",
+          };
+          for (const [key, msg] of Object.entries(result.fields)) {
+            const formKey = fieldMap[key];
+            if (formKey) fieldErrors[formKey] = msg as string;
+          }
+          setErrors(fieldErrors);
+        }
+        setServerError(result.error || t("errorServer"));
+        return;
+      }
+
+      const leadScore: string = result.lead_score || "high";
+
+      trackFormSubmitted({
+        locale,
+        lead_score: leadScore,
+        city: formData.city.trim(),
+      });
+
+      trackGenerateLead({
+        timeline: formData.timeline,
+        age_range: formData.ageRange,
+        tried_ivf: formData.triedIVF,
+        city: formData.city.trim(),
+      });
+      trackConversion();
+
+      setSubmitted(true);
+    } catch {
+      setServerError(t("errorNetwork"));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function updateField(field: keyof FormData, value: string | boolean) {
+    handleFormInteraction();
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+    if (serverError) setServerError(null);
+  }
+
+  if (submitted) {
+    return (
+      <section id="lead-form" className="bg-white">
+        <div className="section-padding">
+          <div className="container-narrow">
+            <div className="text-center py-12 sm:py-16">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-5 flex items-center justify-center rounded-full bg-green-50">
+                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-green-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-medical-heading mb-3">
+                {t("successTitle")}
+              </h2>
+              <p className="text-base sm:text-lg text-medical-muted max-w-md mx-auto">
+                {t("successMessage")}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const showTimelineNudge = formData.timeline === "researching";
+
+  return (
+    <section id="lead-form" className="bg-white">
+      <div className="px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+        <div className="container-narrow px-0 sm:px-0">
+          <div className="text-center mb-8 sm:mb-10">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-medical-heading mb-2 sm:mb-3">{t("title")}</h2>
+            <p className="text-medical-muted text-sm sm:text-base max-w-lg mx-auto">{t("subtitle")}</p>
+          </div>
+
+          <form
+            onSubmit={handleSubmit}
+            noValidate
+            className="max-w-xl mx-auto bg-medical-bg border border-medical-border rounded-2xl p-5 sm:p-8"
+          >
+            {serverError && (
+              <div
+                role="alert"
+                className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-3"
+              >
+                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                <span>{serverError}</span>
+              </div>
+            )}
+
+            <div className="absolute opacity-0 -z-10 h-0 overflow-hidden" aria-hidden="true">
+              <label htmlFor="_company">Company</label>
+              <input ref={honeypotRef} type="text" id="_company" name="_company" tabIndex={-1} autoComplete="off" />
+            </div>
+
+            {/* 1. Name */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label htmlFor="firstName" className={labelClasses}>
+                  {t("firstName")} <span className="text-red-400">*</span>
+                </label>
+                <input
+                  id="firstName"
+                  type="text"
+                  placeholder="Maria"
+                  value={formData.firstName}
+                  onChange={(e) => updateField("firstName", e.target.value)}
+                  disabled={submitting}
+                  aria-invalid={!!errors.firstName}
+                  aria-describedby={errors.firstName ? "err-firstName" : undefined}
+                  className={`${inputClasses} ${errors.firstName ? "border-red-300" : ""} disabled:opacity-60`}
+                />
+                {errors.firstName && <p id="err-firstName" role="alert" className="mt-1 text-sm text-red-500">{errors.firstName}</p>}
+              </div>
+              <div>
+                <label htmlFor="lastName" className={labelClasses}>
+                  {t("lastName")} <span className="text-red-400">*</span>
+                </label>
+                <input
+                  id="lastName"
+                  type="text"
+                  placeholder="Popescu"
+                  value={formData.lastName}
+                  onChange={(e) => updateField("lastName", e.target.value)}
+                  disabled={submitting}
+                  aria-invalid={!!errors.lastName}
+                  aria-describedby={errors.lastName ? "err-lastName" : undefined}
+                  className={`${inputClasses} ${errors.lastName ? "border-red-300" : ""} disabled:opacity-60`}
+                />
+                {errors.lastName && <p id="err-lastName" role="alert" className="mt-1 text-sm text-red-500">{errors.lastName}</p>}
+              </div>
+            </div>
+
+            {/* 2. Phone */}
+            <div className="mb-4">
+              <label htmlFor="phone" className={labelClasses}>
+                {t("phone")} <span className="text-red-400">*</span>
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                placeholder="+40 7XX XXX XXX"
+                value={formData.phone}
+                onChange={(e) => updateField("phone", e.target.value)}
+                disabled={submitting}
+                aria-invalid={!!errors.phone}
+                aria-describedby={errors.phone ? "err-phone" : "phone-helper"}
+                className={`${inputClasses} ${errors.phone ? "border-red-300" : ""} disabled:opacity-60`}
+              />
+              {errors.phone ? (
+                <p id="err-phone" role="alert" className="mt-1 text-sm text-red-500">{errors.phone}</p>
+              ) : (
+                <p id="phone-helper" className="mt-1 text-xs text-medical-muted/70">{t("phoneHelper")}</p>
+              )}
+            </div>
+
+            {/* 3. Email */}
+            <div className="mb-4">
+              <label htmlFor="email" className={labelClasses}>
+                {t("email")} <span className="text-red-400">*</span>
+              </label>
+              <input
+                id="email"
+                type="email"
+                placeholder="maria@example.com"
+                value={formData.email}
+                onChange={(e) => updateField("email", e.target.value)}
+                disabled={submitting}
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "err-email" : undefined}
+                className={`${inputClasses} ${errors.email ? "border-red-300" : ""} disabled:opacity-60`}
+              />
+              {errors.email && <p id="err-email" role="alert" className="mt-1 text-sm text-red-500">{errors.email}</p>}
+            </div>
+
+            {/* 4. Age */}
+            <div className="mb-4">
+              <FormSelect
+                id="ageRange"
+                label={t("ageRange")}
+                placeholder={t("ageRangePlaceholder")}
+                options={ageRanges}
+                value={formData.ageRange}
+                onChange={(v) => updateField("ageRange", v)}
+                disabled={submitting}
+                error={errors.ageRange}
+                errorId="err-ageRange"
+                required
+              />
+            </div>
+
+            {/* 5. Tried IVF */}
+            <div className="mb-4">
+              <fieldset>
+                <legend className={labelClasses}>
+                  {t("triedIVF")} <span className="text-red-400">*</span>
+                </legend>
+                <div className="grid grid-cols-3 gap-2 mt-1" role="group" aria-label={t("triedIVF")}>
+                  {[
+                    { value: "Yes", label: t("triedYes") },
+                    { value: "No", label: t("triedNo") },
+                    { value: "InProgress", label: t("triedInProgress") },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => updateField("triedIVF", opt.value)}
+                      disabled={submitting}
+                      aria-pressed={formData.triedIVF === opt.value}
+                      className={`py-3 px-3 rounded-xl border text-sm font-medium transition-all duration-200 disabled:opacity-60 active:scale-[0.98] ${
+                        formData.triedIVF === opt.value
+                          ? "border-primary-500 bg-primary-50 text-primary-700"
+                          : "border-medical-border bg-white text-medical-text hover:border-primary-200"
+                      } ${errors.triedIVF ? "border-red-300" : ""}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              {errors.triedIVF && <p role="alert" className="mt-1 text-sm text-red-500">{errors.triedIVF}</p>}
+            </div>
+
+            {/* 6. Timeline */}
+            <div className="mb-4">
+              <fieldset>
+                <legend className={labelClasses}>
+                  {t("timeline")} <span className="text-red-400">*</span>
+                </legend>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1" role="group" aria-label={t("timeline")}>
+                  {timelines.map((tl) => (
+                    <button
+                      key={tl.value}
+                      type="button"
+                      onClick={() => updateField("timeline", tl.value)}
+                      disabled={submitting}
+                      aria-pressed={formData.timeline === tl.value}
+                      className={`py-3 px-3 rounded-xl border text-sm font-medium transition-all duration-200 disabled:opacity-60 active:scale-[0.98] ${
+                        formData.timeline === tl.value
+                          ? "border-primary-500 bg-primary-50 text-primary-700"
+                          : "border-medical-border bg-white text-medical-text hover:border-primary-200"
+                      } ${errors.timeline ? "border-red-300" : ""}`}
+                    >
+                      {tl.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              {errors.timeline && <p role="alert" className="mt-1 text-sm text-red-500">{errors.timeline}</p>}
+              {showTimelineNudge && (
+                <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                  {t("timelineNudge")}
+                </p>
+              )}
+            </div>
+
+            {/* 7. Budget */}
+            <div className="mb-4">
+              <FormSelect
+                id="budgetRange"
+                label={t("budgetRange")}
+                placeholder={t("budgetRangePlaceholder")}
+                options={budgetRanges}
+                value={formData.budgetRange}
+                onChange={(v) => updateField("budgetRange", v)}
+                disabled={submitting}
+                error={errors.budgetRange}
+                errorId="err-budgetRange"
+                required
+              />
+            </div>
+
+            {/* 8. City */}
+            <div className="mb-4">
+              <label htmlFor="city" className={labelClasses}>
+                {t("city")} <span className="text-red-400">*</span>
+              </label>
+              <input
+                id="city"
+                type="text"
+                placeholder={t("cityPlaceholder")}
+                value={formData.city}
+                onChange={(e) => updateField("city", e.target.value)}
+                disabled={submitting}
+                aria-invalid={!!errors.city}
+                aria-describedby={errors.city ? "err-city" : undefined}
+                className={`${inputClasses} ${errors.city ? "border-red-300" : ""} disabled:opacity-60`}
+              />
+              {errors.city && <p id="err-city" role="alert" className="mt-1 text-sm text-red-500">{errors.city}</p>}
+            </div>
+
+            {/* 9. Message */}
+            <div className="mb-5">
+              <label htmlFor="message" className={labelClasses}>
+                {t("message")} <span className="text-medical-muted">{t("messageOptional")}</span>
+              </label>
+              <textarea
+                id="message"
+                rows={3}
+                placeholder={t("messagePlaceholder")}
+                value={formData.message}
+                onChange={(e) => updateField("message", e.target.value)}
+                disabled={submitting}
+                className={`${inputClasses} resize-none disabled:opacity-60`}
+              />
+            </div>
+
+            {/* GDPR */}
+            <div className="mb-6">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.gdprConsent}
+                  onChange={(e) => updateField("gdprConsent", e.target.checked)}
+                  disabled={submitting}
+                  aria-invalid={!!errors.gdprConsent}
+                  aria-describedby={errors.gdprConsent ? "err-gdpr" : undefined}
+                  className="mt-0.5 w-5 h-5 rounded border-medical-border text-primary-600 focus:ring-primary-500 cursor-pointer flex-shrink-0 disabled:opacity-60"
+                />
+                <span className={`text-xs sm:text-sm text-medical-muted leading-relaxed ${errors.gdprConsent ? "text-red-500" : ""}`}>
+                  {t.rich("gdprText", {
+                    privacyPolicy: (chunks) => (
+                      <a href={`/${locale}/privacy`} target="_blank" rel="noopener noreferrer" className="text-primary-600 underline underline-offset-2 hover:text-primary-700">{chunks}</a>
+                    ),
+                  })}{" "}
+                  <span className="text-red-400">*</span>
+                </span>
+              </label>
+              {errors.gdprConsent && <p id="err-gdpr" role="alert" className="mt-1 text-sm text-red-500 ml-8">{errors.gdprConsent}</p>}
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full py-3.5 sm:py-4 px-8 text-base font-semibold text-white bg-primary-700 rounded-xl hover:bg-primary-800 active:bg-primary-900 active:scale-[0.99] transition-all duration-200 shadow-md shadow-primary-700/30 hover:shadow-lg hover:shadow-primary-700/40 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {submitting ? (
+                <>
+                  <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  {t("submitting")}
+                </>
+              ) : (
+                t("submit")
+              )}
+            </button>
+
+            <p className="text-center text-xs text-medical-muted/70 mt-3">{t("submitHelper")}</p>
+          </form>
+        </div>
+      </div>
+    </section>
+  );
+}
