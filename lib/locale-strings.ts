@@ -361,7 +361,7 @@ export function nurtureEmailStrings(
   firstName: string,
   locale: SupportedLocale,
 ): NurtureEmailStrings {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ivfromania.com";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fivmatch.ro";
   const localePath = locale === "ro" ? "ro" : "en";
 
   if (locale === "ro") {

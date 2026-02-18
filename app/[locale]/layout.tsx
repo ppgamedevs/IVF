@@ -14,7 +14,7 @@ const inter = Inter({
   display: "swap",
 });
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://ivfromania.com";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://fivmatch.ro";
 
 export async function generateMetadata({
   params: { locale },
@@ -64,6 +64,11 @@ export async function generateMetadata({
       "max-image-preview": "large" as const,
       "max-video-preview": -1,
     },
+    other: {
+      "geo.region": "RO",
+      "geo.placename": "Romania",
+      "ICBM": "45.9432, 24.9668",
+    },
   };
 }
 
@@ -81,8 +86,32 @@ export default async function LocaleLayout({
   validateLocale(locale);
   const messages = await getMessages();
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fivmatch.ro";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "FIV Match",
+    url: baseUrl,
+    inLanguage: locale === "ro" ? "ro" : "en",
+    description: locale === "ro"
+      ? "Serviciu de potrivire între pacienți și clinici private FIV din România. Solicitare gratuită, contact în 24 de ore."
+      : "Matching service between patients and private IVF clinics in Romania. Free request, contact within 24 hours.",
+    areaServed: { "@type": "Country", name: "Romania" },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: { "@type": "EntryPoint", urlTemplate: `${baseUrl}/${locale}#lead-form` },
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <html lang={locale} className={inter.variable}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="font-sans antialiased bg-white text-medical-heading">
         <GoogleAnalytics />
         <GtmNoScript />

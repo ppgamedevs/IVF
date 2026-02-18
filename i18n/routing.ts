@@ -8,6 +8,8 @@ export const defaultLocale: Locale = "ro";
 export const routing = defineRouting({
   locales,
   defaultLocale,
+  // Romanian is default. No browser/cookie detection – user chooses EN via header toggle.
+  localeDetection: false,
 });
 
 export const { Link, redirect, usePathname, useRouter } =

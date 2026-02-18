@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { locales, defaultLocale } from "@/i18n/routing";
 import ThankYouClient from "./ThankYouClient";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://ivfromania.com";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://fivmatch.ro";
 
 export async function generateMetadata({
   params: { locale },
