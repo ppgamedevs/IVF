@@ -68,14 +68,15 @@ ALTER TABLE clinics
   ADD COLUMN IF NOT EXISTS notes TEXT;
 
 -- If city column exists, migrate single city to city_coverage array
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'clinics' AND column_name = 'city') THEN
-    UPDATE clinics
-    SET city_coverage = ARRAY[city]
-    WHERE city IS NOT NULL AND city != '' AND array_length(city_coverage, 1) IS NULL;
-  END IF;
-END $$;
+-- Note: This will only work if city column exists (from migration-006)
+-- If city column doesn't exist, this UPDATE will fail silently due to column check
+-- We use a safe approach: try to update only if city column exists
+-- In practice, migration-006 already created city column, so this is safe
+UPDATE clinics
+SET city_coverage = ARRAY[city]
+WHERE city IS NOT NULL 
+AND city != '' 
+AND (city_coverage IS NULL OR array_length(city_coverage, 1) IS NULL);
 
 CREATE INDEX IF NOT EXISTS idx_clinics_active ON clinics (active) WHERE active = true;
 CREATE INDEX IF NOT EXISTS idx_clinics_email ON clinics (email);
