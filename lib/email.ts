@@ -11,6 +11,11 @@ import {
   clinicBudget,
   clinicGdpr,
   ageRangeDisplay,
+  testStatusDisplay,
+  urgencyDisplay,
+  voucherDisplay,
+  primaryFactorDisplay,
+  contactMethodDisplay,
   intentLabel,
   userSubject,
   userEmailStrings,
@@ -82,8 +87,14 @@ export interface MetaBlock {
   routedTo: string;
 }
 
+interface ExtendedLeadPayload extends LeadPayload {
+  exact_age?: number;
+  test_status?: string;
+  phone_verified_at?: string | null;
+}
+
 function buildClinicHtml(
-  lead: LeadPayload,
+  lead: ExtendedLeadPayload,
   meta: MetaBlock,
 ): string {
   const loc = lead.locale;
@@ -121,10 +132,20 @@ function buildClinicHtml(
           ${row(clinicLabel("name", loc), `${lead.first_name} ${lead.last_name}`)}
           ${row(clinicLabel("email", loc), emailLink, true)}
           ${row(clinicLabel("phone", loc), phoneLink, true)}
-          ${row(clinicLabel("ageRange", loc), lead.age_range)}
+          ${lead.exact_age 
+            ? row(loc === "ro" ? "Vârsta exactă" : "Exact age", `${lead.exact_age} ${loc === "ro" ? "ani" : "years"}`, true)
+            : row(clinicLabel("ageRange", loc), ageRangeDisplay(lead.age_range, loc))}
           ${row(clinicLabel("triedIvf", loc), clinicYesNo(lead.tried_ivf, loc))}
           ${row(clinicLabel("timeline", loc), timelineCell, true)}
-          ${row(clinicLabel("budgetRange", loc), clinicBudget(lead.budget_range, loc))}
+          ${row(loc === "ro" ? "Mod de finanțare" : "Financing method", clinicBudget(lead.budget_range, loc))}
+          ${lead.test_status 
+            ? row(loc === "ro" ? "Status analize medicale" : "Medical test status", testStatusDisplay(lead.test_status, loc))
+            : ""}
+          ${lead.phone_verified_at 
+            ? row(loc === "ro" ? "Confirmare telefonică" : "Phone verified", loc === "ro" 
+              ? `✓ Confirmat telefonic la ${new Date(lead.phone_verified_at).toLocaleString("ro-RO", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Bucharest" })}`
+              : `✓ Verified by phone at ${new Date(lead.phone_verified_at).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Bucharest" })}`, true)
+            : ""}
           ${row(clinicLabel("intentLevel", loc), (() => {
             const styles: Record<string, string> = {
               high: "background:#dcfce7;color:#166534;",
@@ -177,7 +198,7 @@ function buildClinicHtml(
 // ---------------------------------------------------------------------------
 
 export function buildUserHtml(
-  lead: LeadPayload,
+  lead: ExtendedLeadPayload,
   submittedAt: string,
 ): string {
   const locale = lead.locale;
@@ -196,10 +217,15 @@ export function buildUserHtml(
     row(clinicLabel("name", locale), `${lead.first_name} ${lead.last_name}`),
     row(clinicLabel("email", locale), lead.email),
     row(clinicLabel("phone", locale), lead.phone),
-    row(clinicLabel("ageRange", locale), ageRangeDisplay(lead.age_range, locale)),
+    lead.exact_age 
+      ? row(locale === "ro" ? "Vârsta exactă" : "Exact age", `${lead.exact_age} ${locale === "ro" ? "ani" : "years"}`)
+      : row(clinicLabel("ageRange", locale), ageRangeDisplay(lead.age_range, locale)),
     row(clinicLabel("triedIvf", locale), clinicYesNo(lead.tried_ivf, locale)),
     row(clinicLabel("timeline", locale), clinicTimeline(lead.timeline, locale)),
-    row(clinicLabel("budgetRange", locale), clinicBudget(lead.budget_range, locale)),
+    row(locale === "ro" ? "Mod de finanțare" : "Financing method", clinicBudget(lead.budget_range, locale)),
+    lead.test_status 
+      ? row(locale === "ro" ? "Status analize medicale" : "Medical test status", testStatusDisplay(lead.test_status, locale))
+      : "",
     row(clinicLabel("city", locale), lead.city),
     row(
       clinicLabel("message", locale),
@@ -209,7 +235,7 @@ export function buildUserHtml(
       locale === "ro" ? "Data trimiterii" : "Submitted at",
       dateStr,
     ),
-  ].join("");
+  ].filter(Boolean).join("");
 
   return `
 <!DOCTYPE html>
@@ -270,7 +296,7 @@ export function buildUserHtml(
 // ---------------------------------------------------------------------------
 
 function buildInternalHtml(
-  lead: LeadPayload,
+  lead: ExtendedLeadPayload,
   leadId: string,
   submittedAt: string,
   intentLevel: IntentLevel,
@@ -317,17 +343,27 @@ function buildInternalHtml(
           ${row(clinicLabel("name", locale), `${lead.first_name} ${lead.last_name}`)}
           ${row(clinicLabel("email", locale), `<a href="mailto:${escapeHtml(lead.email)}" style="color:#2563eb;text-decoration:none;">${escapeHtml(lead.email)}</a>`, true)}
           ${row(clinicLabel("phone", locale), `<a href="tel:${escapeHtml(lead.phone)}" style="color:#2563eb;text-decoration:none;">${escapeHtml(lead.phone)}</a>`, true)}
-          ${row(clinicLabel("ageRange", locale), ageRangeDisplay(lead.age_range, locale))}
+          ${lead.exact_age 
+            ? row(locale === "ro" ? "Vârsta exactă" : "Exact age", `${lead.exact_age} ${locale === "ro" ? "ani" : "years"}`, true)
+            : row(clinicLabel("ageRange", locale), ageRangeDisplay(lead.age_range, locale))}
           ${row(clinicLabel("triedIvf", locale), clinicYesNo(lead.tried_ivf, locale))}
           ${row(clinicLabel("timeline", locale), clinicTimeline(lead.timeline, locale))}
-          ${row(clinicLabel("budgetRange", locale), clinicBudget(lead.budget_range, locale))}
+          ${row(locale === "ro" ? "Mod de finanțare" : "Financing method", clinicBudget(lead.budget_range, locale))}
+          ${lead.test_status 
+            ? row(locale === "ro" ? "Status analize" : "Test status", testStatusDisplay(lead.test_status, locale))
+            : ""}
+          ${lead.phone_verified_at 
+            ? row(locale === "ro" ? "Confirmare telefonică" : "Phone verified", locale === "ro" 
+              ? `✓ Confirmat la ${new Date(lead.phone_verified_at).toLocaleString("ro-RO", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Bucharest" })}`
+              : `✓ Verified at ${new Date(lead.phone_verified_at).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Bucharest" })}`, true)
+            : ""}
           ${row(s.intentLabel, intentBadge, true)}
           ${row(clinicLabel("city", locale), lead.city)}
           ${lead.message ? row(clinicLabel("message", locale), lead.message) : ""}
         </table>
 
-        <div style="padding:16px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;font-size:14px;color:#92400e;">
-          <strong>${locale === "ro" ? "Actiune necesara" : "Action required"}</strong><br>
+        <div style="padding:16px;background:#dbeafe;border:1px solid #bfdbfe;border-radius:8px;font-size:14px;color:#1e40af;">
+          <strong>${locale === "ro" ? "Următorii pași" : "Next steps"}</strong><br>
           ${escapeHtml(s.actionRequired)}
         </div>
       </div>
@@ -408,7 +444,7 @@ export interface SendLeadEmailsParams {
 }
 
 export interface SendInternalNotificationParams {
-  lead: LeadPayload;
+  lead: ExtendedLeadPayload;
   leadId: string;
   submittedAt: string;
   intentLevel: IntentLevel;
@@ -508,4 +544,223 @@ export async function sendLeadEmails({
     clinicEmailSent: clinicResult.status === "fulfilled",
     userEmailSent: userResult.status === "fulfilled",
   };
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2: Premium Lead Sheet Email Template
+// ---------------------------------------------------------------------------
+
+interface PremiumLeadData {
+  lead: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    phone: string;
+    email: string;
+    city: string;
+    female_age_exact?: number | null;
+    male_age_exact?: number | null;
+    primary_factor?: string | null;
+    voucher_status?: string | null;
+    has_recent_tests?: boolean | null;
+    tests_list?: string | null;
+    previous_clinics?: string | null;
+    urgency_level?: string | null;
+    availability_windows?: string | null;
+    best_contact_method?: string | null;
+    budget_range?: string | null;
+    operator_verified_at?: string | null;
+    call_attempts?: number | null;
+    operator_notes?: string | null;
+    consent_timestamp?: string | null;
+    locale?: string;
+  };
+  clinicEmail: string;
+  clinicName: string;
+}
+
+function buildPremiumLeadSheetHtml(data: PremiumLeadData): string {
+  const { lead, clinicName } = data;
+  const locale = (lead.locale as "ro" | "en") || "ro";
+  const isRO = locale === "ro";
+
+  function section(title: string, content: string): string {
+    return `
+      <div style="margin-bottom:24px;">
+        <h3 style="margin:0 0 12px;font-size:16px;font-weight:600;color:#1e3a5f;border-bottom:2px solid #e2e8f0;padding-bottom:6px;">
+          ${escapeHtml(title)}
+        </h3>
+        ${content}
+      </div>`;
+  }
+
+  function row(label: string, value: string, isHtml = false): string {
+    return `
+      <tr>
+        <td style="padding:8px 12px;font-weight:600;color:#64748b;width:35%;vertical-align:top;">${escapeHtml(label)}</td>
+        <td style="padding:8px 12px;color:#334155;word-wrap:break-word;word-break:break-word;">${isHtml ? value : escapeHtml(value || (isRO ? "—" : "—"))}</td>
+      </tr>`;
+  }
+
+  const verifiedAt = lead.operator_verified_at 
+    ? new Date(lead.operator_verified_at).toLocaleString(isRO ? "ro-RO" : "en-GB", {
+        dateStyle: "short",
+        timeStyle: "short",
+        timeZone: "Europe/Bucharest",
+      })
+    : null;
+
+  const urgencyLabel = urgencyDisplay(lead.urgency_level || null, locale);
+
+  return `
+<!DOCTYPE html>
+<html lang="${locale}">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background-color:#f8fafc;">
+  <div style="max-width:700px;margin:0 auto;padding:32px 24px;">
+    <div style="background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+
+      <div style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);padding:28px 32px;">
+        <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;">
+          ${isRO ? "Lead verificat telefonic" : "Phone-verified lead"}
+        </h1>
+        <p style="margin:8px 0 0;color:#ffffff;opacity:0.95;font-size:14px;">
+          ${escapeHtml(lead.city || "")} - ${urgencyLabel}
+        </p>
+      </div>
+
+      <div style="padding:32px;">
+        ${section(
+          isRO ? "Date de contact" : "Contact Information",
+          `<table style="width:100%;border-collapse:collapse;">
+            ${row(isRO ? "Nume" : "Name", `${lead.first_name} ${lead.last_name}`)}
+            ${row(isRO ? "Telefon" : "Phone", `<a href="tel:${escapeHtml(lead.phone)}" style="color:#2563eb;text-decoration:none;">${escapeHtml(lead.phone)}</a>`, true)}
+            ${row(isRO ? "Email" : "Email", `<a href="mailto:${escapeHtml(lead.email)}" style="color:#2563eb;text-decoration:none;">${escapeHtml(lead.email)}</a>`, true)}
+            ${lead.best_contact_method ? row(isRO ? "Metodă preferată de contact" : "Preferred contact method", contactMethodDisplay(lead.best_contact_method, locale)) : ""}
+          </table>`
+        )}
+
+        ${section(
+          isRO ? "Intenție și finanțare" : "Intent and Financing",
+          `<table style="width:100%;border-collapse:collapse;">
+            ${row(isRO ? "Urgență" : "Urgency", urgencyLabel)}
+            ${lead.budget_range ? row(isRO ? "Mod de finanțare" : "Financing method", clinicBudget(lead.budget_range, locale)) : ""}
+            ${lead.voucher_status ? row(isRO ? "Status voucher" : "Voucher status", voucherDisplay(lead.voucher_status, locale)) : ""}
+          </table>`
+        )}
+
+        ${section(
+          isRO ? "Calificatori medicali" : "Medical Qualifiers",
+          `<table style="width:100%;border-collapse:collapse;">
+            ${lead.female_age_exact ? row(isRO ? "Vârsta (femeie)" : "Age (female)", `${lead.female_age_exact} ${isRO ? "ani" : "years"}`) : ""}
+            ${lead.male_age_exact ? row(isRO ? "Vârsta (bărbat)" : "Age (male)", `${lead.male_age_exact} ${isRO ? "ani" : "years"}`) : ""}
+            ${lead.primary_factor ? row(isRO ? "Factor principal" : "Primary factor", primaryFactorDisplay(lead.primary_factor, locale)) : ""}
+            ${lead.has_recent_tests !== null ? row(isRO ? "Are analize recente" : "Has recent tests", lead.has_recent_tests ? (isRO ? "Da" : "Yes") : (isRO ? "Nu" : "No")) : ""}
+            ${lead.tests_list ? row(isRO ? "Lista analizelor" : "Tests list", lead.tests_list) : ""}
+          </table>`
+        )}
+
+        ${section(
+          isRO ? "Logistică" : "Logistics",
+          `<table style="width:100%;border-collapse:collapse;">
+            ${lead.availability_windows ? row(isRO ? "Disponibilitate pentru apeluri" : "Availability for calls", lead.availability_windows) : ""}
+            ${row(isRO ? "Oraș" : "City", lead.city || "")}
+          </table>`
+        )}
+
+        ${lead.previous_clinics ? section(
+          isRO ? "Istoric" : "History",
+          `<p style="margin:0;color:#334155;">${escapeHtml(lead.previous_clinics)}</p>`
+        ) : ""}
+
+        ${section(
+          isRO ? "Verificare operator" : "Operator Verification",
+          `<table style="width:100%;border-collapse:collapse;">
+            ${verifiedAt ? row(isRO ? "Verificat la" : "Verified at", verifiedAt) : ""}
+            ${lead.call_attempts !== null && lead.call_attempts > 0 ? row(isRO ? "Încercări apel" : "Call attempts", String(lead.call_attempts)) : ""}
+            ${lead.operator_notes ? row(isRO ? "Note operator" : "Operator notes", lead.operator_notes) : ""}
+          </table>`
+        )}
+
+        ${section(
+          isRO ? "Consimțământ GDPR" : "GDPR Consent",
+          `<table style="width:100%;border-collapse:collapse;">
+            ${lead.consent_timestamp ? row(
+              isRO ? "Consimțământ explicit captat la" : "Explicit consent captured at",
+              new Date(lead.consent_timestamp).toLocaleString(isRO ? "ro-RO" : "en-GB", {
+                dateStyle: "long",
+                timeStyle: "short",
+                timeZone: "Europe/Bucharest",
+              })
+            ) : ""}
+            ${row(
+              isRO ? "Scop utilizare date" : "Data usage purpose",
+              isRO ? "Datele pot fi utilizate pentru contact în scop FIV" : "Data may be used for contact regarding IVF purposes"
+            )}
+          </table>
+          <div style="margin-top:12px;padding:12px;background:#f0f7ff;border-radius:6px;border-left:3px solid #2563eb;">
+            <p style="margin:0;font-size:13px;color:#1e40af;">
+              <strong>${isRO ? "✓ Confirmat explicit" : "✓ Explicitly confirmed"}</strong> - ${isRO 
+                ? "Consimțământul a fost acordat explicit de către pacient în formularul de pe site."
+                : "Consent was explicitly given by the patient in the website form."}
+            </p>
+          </div>`
+        )}
+
+        <div style="margin-top:20px;padding-top:20px;border-top:1px solid #e2e8f0;">
+          <p style="margin:0;font-size:13px;color:#64748b;">
+            <strong>${isRO ? "Clinică atribuită:" : "Assigned clinic:"}</strong> ${escapeHtml(clinicName)}
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+export interface SendPremiumLeadEmailParams {
+  lead: PremiumLeadData["lead"];
+  clinicEmail: string;
+  clinicName: string;
+}
+
+export async function sendPremiumLeadEmail({
+  lead,
+  clinicEmail,
+  clinicName,
+}: SendPremiumLeadEmailParams) {
+  const resend = getResend();
+  const from = getFromAddress();
+  const monitorEmail = getMonitorEmail();
+  const locale = (lead.locale as "ro" | "en") || "ro";
+  const isRO = locale === "ro";
+
+  const urgencyLabel = urgencyDisplay(lead.urgency_level || null, locale);
+  const subject = isRO
+    ? `[FIVMatch] Lead verificat telefonic - ${lead.city || "N/A"} - ${urgencyLabel}`
+    : `[FIVMatch] Phone-verified lead - ${lead.city || "N/A"} - ${urgencyLabel}`;
+
+  const html = buildPremiumLeadSheetHtml({ lead, clinicEmail, clinicName });
+
+  const recipients = [clinicEmail];
+  if (monitorEmail) {
+    recipients.push(monitorEmail);
+  }
+
+  const result = await resend.emails.send({
+    from,
+    to: clinicEmail,
+    cc: monitorEmail ? [monitorEmail] : undefined,
+    subject,
+    html,
+  });
+
+  if (result.error) {
+    console.error("Failed to send premium lead email:", result.error);
+    throw new Error("Failed to send premium lead email");
+  }
+
+  return { sent: true, emailId: result.data?.id };
 }

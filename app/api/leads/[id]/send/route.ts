@@ -27,9 +27,9 @@ export async function POST(
     const leadRows = await sql`
       SELECT 
         id, first_name, last_name, phone, email,
-        age_range, tried_ivf, timeline, budget_range, city,
+        age_range, exact_age, tried_ivf, timeline, budget_range, test_status, city,
         message, gdpr_consent, locale, ip_hash,
-        intent_level, status, created_at
+        intent_level, status, created_at, phone_verified_at
       FROM leads
       WHERE id = ${leadId}
         AND status = 'verified'
@@ -59,13 +59,16 @@ export async function POST(
       phone: lead.phone,
       email: lead.email,
       age_range: lead.age_range,
+      exact_age: lead.exact_age || undefined,
       tried_ivf: lead.tried_ivf,
       timeline: lead.timeline,
       budget_range: lead.budget_range,
+      test_status: lead.test_status || undefined,
       city: lead.city,
       message: lead.message || undefined,
       gdpr_consent: lead.gdpr_consent,
       locale: lead.locale as "ro" | "en",
+      phone_verified_at: lead.phone_verified_at || undefined,
     };
 
     // Send email to clinic using existing routing

@@ -3,7 +3,7 @@ import { getDb } from "@/lib/db";
 
 /**
  * POST /api/admin/leads/[id]/notes?token=...
- * Updates lead notes.
+ * Updates operator notes for a lead.
  * Body: { notes: string }
  */
 export async function POST(
@@ -18,26 +18,30 @@ export async function POST(
   }
 
   try {
+    const sql = getDb();
     const body = await request.json();
     const { notes } = body;
 
-    const sql = getDb();
     const now = new Date().toISOString();
 
     const result = await sql`
       UPDATE leads
       SET 
+        operator_notes = ${notes || null},
         notes = ${notes || null},
         updated_at = ${now}
       WHERE id = ${params.id}
-      RETURNING id, notes
+      RETURNING id, operator_notes, notes
     `;
 
     if (result.length === 0) {
       return NextResponse.json({ error: "Lead negăsit" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, lead: result[0] });
+    return NextResponse.json({
+      success: true,
+      operator_notes: result[0].operator_notes,
+    });
   } catch (err) {
     console.error("Error updating notes:", err);
     return NextResponse.json(

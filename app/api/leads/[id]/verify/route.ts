@@ -28,10 +28,11 @@ export async function POST(
       UPDATE leads
       SET status = 'verified',
           verified_at = ${now},
+          phone_verified_at = ${now},
           updated_at = ${now}
       WHERE id = ${leadId}
         AND status = 'new_unverified'
-      RETURNING id, status, verified_at
+      RETURNING id, status, verified_at, phone_verified_at
     `;
 
     if (rows.length === 0) {

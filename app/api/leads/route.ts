@@ -4,6 +4,7 @@ import { validateLeadPayload } from "@/lib/validation";
 import { sendInternalNotification } from "@/lib/email";
 import { hashIp } from "@/lib/ip-hash";
 import { resolveLocale, apiMessage, deriveIntentLevel, userSubject } from "@/lib/locale-strings";
+import { computeLeadTier } from "@/lib/tiering";
 import {
   isHoneypotFilled,
   isRateLimited,
@@ -135,6 +136,12 @@ export async function POST(request: NextRequest) {
     const now = new Date().toISOString();
     const intentLevel = deriveIntentLevel(lead.timeline, lead.budget_range);
     const sql = getDb();
+    
+    // Capture consent metadata (explicit GDPR consent)
+    const userAgent = request.headers.get("user-agent") || "";
+    const consentTimestamp = now; // Exact moment consent was given
+    const consentIpHash = ipHash; // Already hashed IP
+    const consentUserAgent = userAgent.slice(0, 500); // Limit length
 
     let leadId: string;
 
@@ -151,19 +158,41 @@ export async function POST(request: NextRequest) {
       const nurtureStage = isLowIntent ? 1 : 0;
       const nurtureNextAt = isLowIntent ? now : null;
 
+      // Compute initial tier (will be D for new leads, but compute for consistency)
+      const tieringResult = computeLeadTier({
+        operator_status: "NEW",
+        urgency_level: lead.urgency_level || (lead.timeline === "asap" ? "ASAP_0_30" : lead.timeline === "1-3months" ? "SOON_1_3" : "INFO_ONLY"),
+        consent_to_share: lead.consent_to_share ?? true,
+        female_age_exact: lead.female_age_exact ?? lead.exact_age ?? null,
+        best_contact_method: lead.best_contact_method ?? null,
+        availability_windows: lead.availability_windows ?? null,
+        has_recent_tests: lead.has_recent_tests ?? null,
+        tests_list: lead.tests_list ?? null,
+      }, lead.locale);
+
       const rows = await sql`
         INSERT INTO leads (
           first_name, last_name, phone, email,
-          age_range, tried_ivf, timeline, budget_range, city,
+          age_range, exact_age, tried_ivf, timeline, budget_range, test_status, city,
           message, gdpr_consent, locale, ip_hash,
-          intent_level, status, created_at, updated_at,
-          nurture_stage, nurture_next_at, nurture_completed
+          intent_level, status, operator_status, created_at, updated_at,
+          nurture_stage, nurture_next_at, nurture_completed,
+          female_age_exact, male_age_exact, primary_factor, voucher_status,
+          has_recent_tests, tests_list, previous_clinics, urgency_level,
+          availability_windows, best_contact_method, consent_to_share,
+          consent_timestamp, consent_ip_hash, consent_user_agent,
+          lead_tier, tier_reason
         ) VALUES (
           ${lead.first_name}, ${lead.last_name}, ${lead.phone}, ${lead.email},
-          ${lead.age_range}, ${lead.tried_ivf}, ${lead.timeline}, ${lead.budget_range}, ${lead.city},
+          ${lead.age_range}, ${lead.exact_age ?? null}, ${lead.tried_ivf}, ${lead.timeline}, ${lead.budget_range}, ${lead.test_status ?? null}, ${lead.city},
           ${lead.message ?? null}, ${lead.gdpr_consent}, ${lead.locale}, ${ipHash},
-          ${intentLevel}, ${"new_unverified"}, ${now}, ${now},
-          ${nurtureStage}, ${nurtureNextAt}, ${false}
+          ${intentLevel}, ${"new_unverified"}, ${"NEW"}, ${now}, ${now},
+          ${nurtureStage}, ${nurtureNextAt}, ${false},
+          ${lead.female_age_exact ?? null}, ${lead.male_age_exact ?? null}, ${lead.primary_factor ?? null}, ${lead.voucher_status ?? null},
+          ${lead.has_recent_tests ?? null}, ${lead.tests_list ?? null}, ${lead.previous_clinics ?? null}, ${lead.urgency_level ?? (lead.timeline === "asap" ? "ASAP_0_30" : lead.timeline === "1-3months" ? "SOON_1_3" : "INFO_ONLY")},
+          ${lead.availability_windows ?? null}, ${lead.best_contact_method ?? null}, ${lead.consent_to_share ?? true},
+          ${consentTimestamp}, ${consentIpHash}, ${consentUserAgent},
+          ${tieringResult.tier}, ${tieringResult.reason}
         )
         RETURNING id, created_at
       `;
@@ -172,25 +201,85 @@ export async function POST(request: NextRequest) {
     } catch (dbErr) {
       // Production may not have migration 005 (nurture columns) yet — fallback to insert without them
       if (isMissingColumnError(dbErr)) {
+        // Fallback: try without Phase 2 fields if migration not run
+        const tieringResult = computeLeadTier({
+          operator_status: "NEW",
+          urgency_level: lead.urgency_level || (lead.timeline === "asap" ? "ASAP_0_30" : lead.timeline === "1-3months" ? "SOON_1_3" : "INFO_ONLY"),
+          consent_to_share: lead.consent_to_share ?? true,
+          female_age_exact: lead.female_age_exact ?? lead.exact_age ?? null,
+          best_contact_method: lead.best_contact_method ?? null,
+          availability_windows: lead.availability_windows ?? null,
+          has_recent_tests: lead.has_recent_tests ?? null,
+          tests_list: lead.tests_list ?? null,
+        }, lead.locale);
+
         const fallbackRows = await sql`
           INSERT INTO leads (
             first_name, last_name, phone, email,
-            age_range, tried_ivf, timeline, budget_range, city,
+            age_range, exact_age, tried_ivf, timeline, budget_range, test_status, city,
             message, gdpr_consent, locale, ip_hash,
-            intent_level, status, created_at, updated_at
+            intent_level, status, operator_status, created_at, updated_at,
+            consent_to_share, consent_timestamp, consent_ip_hash, consent_user_agent,
+            lead_tier, tier_reason
           ) VALUES (
             ${lead.first_name}, ${lead.last_name}, ${lead.phone}, ${lead.email},
-            ${lead.age_range}, ${lead.tried_ivf}, ${lead.timeline}, ${lead.budget_range}, ${lead.city},
+            ${lead.age_range}, ${lead.exact_age ?? null}, ${lead.tried_ivf}, ${lead.timeline}, ${lead.budget_range}, ${lead.test_status ?? null}, ${lead.city},
             ${lead.message ?? null}, ${lead.gdpr_consent}, ${lead.locale}, ${ipHash},
-            ${intentLevel}, ${"new_unverified"}, ${now}, ${now}
+            ${intentLevel}, ${"new_unverified"}, ${"NEW"}, ${now}, ${now},
+            ${lead.consent_to_share ?? true}, ${consentTimestamp}, ${consentIpHash}, ${consentUserAgent},
+            ${tieringResult.tier}, ${tieringResult.reason}
           )
           RETURNING id, created_at
         `;
+        
+        // Create audit events even in fallback mode
+        try {
+          await sql`
+            INSERT INTO lead_events (lead_id, type, metadata)
+            VALUES (${fallbackRows[0]?.id}, 'CREATED', ${JSON.stringify({ locale: lead.locale, intent_level: intentLevel })})
+          `;
+          await sql`
+            INSERT INTO lead_events (lead_id, type, metadata)
+            VALUES (${fallbackRows[0]?.id}, 'CONSENT_CAPTURED', ${JSON.stringify({ 
+              consent: lead.consent_to_share ?? true,
+              ip_hash: consentIpHash,
+              user_agent: consentUserAgent,
+              locale: lead.locale,
+              timestamp: consentTimestamp,
+            })})
+          `;
+        } catch (err) {
+          console.warn("Could not create audit events:", err);
+        }
         leadId = fallbackRows[0]?.id as string;
         if (!leadId) throw dbErr;
       } else {
         throw dbErr;
       }
+    }
+
+    // Create audit trail events: CREATED and CONSENT_CAPTURED
+    try {
+      // Event 1: Lead created
+      await sql`
+        INSERT INTO lead_events (lead_id, type, metadata)
+        VALUES (${leadId}, 'CREATED', ${JSON.stringify({ locale: lead.locale, intent_level: intentLevel })})
+      `;
+      
+      // Event 2: Explicit consent captured (GDPR audit trail)
+      await sql`
+        INSERT INTO lead_events (lead_id, type, metadata)
+        VALUES (${leadId}, 'CONSENT_CAPTURED', ${JSON.stringify({ 
+          consent: lead.consent_to_share ?? true,
+          ip_hash: consentIpHash,
+          user_agent: consentUserAgent,
+          locale: lead.locale,
+          timestamp: consentTimestamp,
+        })})
+      `;
+    } catch (err) {
+      // LeadEvent table might not exist yet, ignore
+      console.warn("Could not create lead events:", err);
     }
 
     // Manual gate workflow: send only to internal monitor + user confirmation

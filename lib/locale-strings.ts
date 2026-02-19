@@ -75,6 +75,10 @@ const VALIDATION: Record<string, Bi> = {
     ro: "Trebuie sa accepti prelucrarea datelor pentru a continua",
     en: "You need to accept data processing to continue",
   },
+  consent_to_share_required: {
+    ro: "Trebuie sa accepti partajarea datelor pentru a continua",
+    en: "You must agree to data sharing to continue",
+  },
   invalid_body: {
     ro: "Cererea nu este valida",
     en: "Invalid request body",
@@ -205,14 +209,90 @@ export function clinicTimeline(value: string, locale: SupportedLocale): string {
 }
 
 const BUDGET_LABELS: Record<string, Bi> = {
-  "under-10k": { ro: "Sub 10.000 lei", en: "Under 10,000 lei" },
-  "10k-20k": { ro: "10.000 - 20.000 lei", en: "10,000 - 20,000 lei" },
-  "over-20k": { ro: "Peste 20.000 lei", en: "Over 20,000 lei" },
-  "prefer-discuss": { ro: "Prefera sa discute cu clinica", en: "Prefers to discuss with clinic" },
+  "under-10k": { ro: "Fonduri proprii", en: "Own funds" },
+  "10k-20k": { ro: "Programul de Stat", en: "State Program" },
+  "over-20k": { ro: "Credit medical", en: "Medical credit" },
+  "prefer-discuss": { ro: "Preferă să discute cu clinica", en: "Prefers to discuss with clinic" },
 };
 
 export function clinicBudget(value: string, locale: SupportedLocale): string {
   const bi = BUDGET_LABELS[value];
+  return bi ? t(bi, locale) : value;
+}
+
+const TEST_STATUS_LABELS: Record<string, Bi> = {
+  "ready": { ro: "Analizele sunt gata", en: "Tests are ready" },
+  "pending": { ro: "Analizele sunt în curs", en: "Tests are in progress" },
+  "not-started": { ro: "Nu am început analizele", en: "Haven't started tests" },
+  "unknown": { ro: "Nu știu", en: "Don't know" },
+};
+
+export function testStatusDisplay(value: string | null | undefined, locale: SupportedLocale): string {
+  if (!value) return locale === "ro" ? "—" : "—";
+  const bi = TEST_STATUS_LABELS[value];
+  return bi ? t(bi, locale) : value;
+}
+
+// Phase 2: Urgency level labels
+const URGENCY_LABELS: Record<string, Bi> = {
+  "ASAP_0_30": { ro: "Cât mai curând (0-30 zile)", en: "As soon as possible (0-30 days)" },
+  "SOON_1_3": { ro: "În curând (1-3 luni)", en: "Soon (1-3 months)" },
+  "MID_3_6": { ro: "Medie (3-6 luni)", en: "Medium (3-6 months)" },
+  "LATER_6_12": { ro: "Mai târziu (6-12 luni)", en: "Later (6-12 months)" },
+  "INFO_ONLY": { ro: "Doar informare", en: "Information only" },
+};
+
+export function urgencyDisplay(value: string | null | undefined, locale: SupportedLocale): string {
+  if (!value) return locale === "ro" ? "—" : "—";
+  const bi = URGENCY_LABELS[value];
+  return bi ? t(bi, locale) : value;
+}
+
+// Phase 2: Voucher status labels
+const VOUCHER_LABELS: Record<string, Bi> = {
+  "NONE": { ro: "Nu am", en: "None" },
+  "APPLIED": { ro: "Am aplicat", en: "Applied" },
+  "APPROVED_ASSMB": { ro: "Aprobat ASSMB", en: "Approved ASSMB" },
+  "APPROVED_NATIONAL": { ro: "Aprobat Program Național", en: "Approved National Program" },
+  "APPROVED_OTHER": { ro: "Aprobat alt program", en: "Approved other program" },
+};
+
+export function voucherDisplay(value: string | null | undefined, locale: SupportedLocale): string {
+  if (!value) return locale === "ro" ? "—" : "—";
+  const bi = VOUCHER_LABELS[value];
+  return bi ? t(bi, locale) : value;
+}
+
+// Phase 2: Primary factor labels
+const PRIMARY_FACTOR_LABELS: Record<string, Bi> = {
+  "UNKNOWN": { ro: "Nu știu", en: "Don't know" },
+  "MALE_FACTOR": { ro: "Factor masculin", en: "Male factor" },
+  "FEMALE_FACTOR": { ro: "Factor feminin", en: "Female factor" },
+  "BOTH": { ro: "Ambele", en: "Both" },
+  "UNEXPLAINED": { ro: "Nedescoperit", en: "Unexplained" },
+  "ENDOMETRIOSIS": { ro: "Endometrioză", en: "Endometriosis" },
+  "LOW_OVARIAN_RESERVE": { ro: "Rezervă ovariană scăzută", en: "Low ovarian reserve" },
+  "TUBAL": { ro: "Factor tubar", en: "Tubal factor" },
+  "PCOS": { ro: "PCOS", en: "PCOS" },
+  "OTHER": { ro: "Altul", en: "Other" },
+};
+
+export function primaryFactorDisplay(value: string | null | undefined, locale: SupportedLocale): string {
+  if (!value) return locale === "ro" ? "—" : "—";
+  const bi = PRIMARY_FACTOR_LABELS[value];
+  return bi ? t(bi, locale) : value;
+}
+
+// Phase 2: Best contact method labels
+const CONTACT_METHOD_LABELS: Record<string, Bi> = {
+  "PHONE": { ro: "Telefon", en: "Phone" },
+  "WHATSAPP": { ro: "WhatsApp", en: "WhatsApp" },
+  "EMAIL": { ro: "Email", en: "Email" },
+};
+
+export function contactMethodDisplay(value: string | null | undefined, locale: SupportedLocale): string {
+  if (!value) return locale === "ro" ? "—" : "—";
+  const bi = CONTACT_METHOD_LABELS[value];
   return bi ? t(bi, locale) : value;
 }
 
@@ -342,22 +422,22 @@ export interface InternalEmailStrings {
 export function internalEmailStrings(locale: SupportedLocale): InternalEmailStrings {
   if (locale === "ro") {
     return {
-      heading: "Lead nou - de verificat",
-      intro: "Un nou lead a fost trimis prin formularul de pe site. Verifica detaliile si aproba pentru trimitere catre clinica.",
+      heading: "Lead nou primit",
+      intro: "Un nou lead a fost trimis prin formularul de pe site. Verifică detaliile în panoul de operator (/admin) și aprobă pentru trimitere către clinică.",
       leadIdLabel: "ID Lead",
       submittedAtLabel: "Trimis la",
       intentLabel: "Nivel intent",
-      actionRequired: "Verifica lead-ul in panoul de operator si aproba pentru trimitere catre clinica.",
+      actionRequired: "Verifică lead-ul în /admin, contactează clientul telefonic pentru verificare, apoi atribuie o clinică și trimite email-ul premium.",
     };
   }
 
   return {
-    heading: "New lead - needs verification",
-    intro: "A new lead has been submitted through the website form. Review the details and approve for sending to clinic.",
+    heading: "New lead received",
+    intro: "A new lead has been submitted through the website form. Review the details in the operator panel (/admin) and approve for sending to clinic.",
     leadIdLabel: "Lead ID",
     submittedAtLabel: "Submitted at",
     intentLabel: "Intent level",
-    actionRequired: "Review the lead in the operator panel and approve for sending to clinic.",
+    actionRequired: "Review the lead in /admin, call the client for verification, then assign a clinic and send the premium email.",
   };
 }
 

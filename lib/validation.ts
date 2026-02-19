@@ -6,13 +6,27 @@ export interface LeadPayload {
   phone: string;
   email: string;
   age_range: string;
+  exact_age?: number;
   tried_ivf: string;
   timeline: string;
   budget_range: string;
+  test_status?: string;
   city: string;
   message?: string;
   gdpr_consent: boolean;
   locale: SupportedLocale;
+  // Phase 2 fields
+  female_age_exact?: number;
+  male_age_exact?: number;
+  primary_factor?: string;
+  voucher_status?: string;
+  has_recent_tests?: boolean;
+  tests_list?: string;
+  previous_clinics?: string;
+  urgency_level?: string;
+  availability_windows?: string;
+  best_contact_method?: string;
+  consent_to_share: boolean;
 }
 
 const VALID_AGE_RANGES = ["under-30", "30-34", "35-37", "38-40", "41+"];
@@ -66,12 +80,33 @@ export function validateLeadPayload(body: unknown): ValidationResult {
   const phone = sanitizeString(raw.phone);
   const email = sanitizeString(raw.email);
   const ageRange = sanitizeString(raw.age_range);
+  const exactAge = raw.exact_age !== undefined && raw.exact_age !== null
+    ? (typeof raw.exact_age === "number" ? raw.exact_age : parseInt(String(raw.exact_age), 10))
+    : undefined;
   const triedIvf = sanitizeString(raw.tried_ivf);
   const timeline = sanitizeString(raw.timeline);
   const budgetRange = sanitizeString(raw.budget_range);
+  const testStatus = sanitizeString(raw.test_status);
   const city = sanitizeString(raw.city);
   const message = sanitizeString(raw.message);
   const gdprConsent = raw.gdpr_consent === true;
+  
+  // Phase 2 fields
+  const femaleAgeExact = raw.female_age_exact !== undefined && raw.female_age_exact !== null
+    ? (typeof raw.female_age_exact === "number" ? raw.female_age_exact : parseInt(String(raw.female_age_exact), 10))
+    : undefined;
+  const maleAgeExact = raw.male_age_exact !== undefined && raw.male_age_exact !== null
+    ? (typeof raw.male_age_exact === "number" ? raw.male_age_exact : parseInt(String(raw.male_age_exact), 10))
+    : undefined;
+  const primaryFactor = sanitizeString(raw.primary_factor);
+  const voucherStatus = sanitizeString(raw.voucher_status);
+  const hasRecentTests = raw.has_recent_tests === true || raw.has_recent_tests === "yes" || raw.has_recent_tests === "true";
+  const testsList = sanitizeString(raw.tests_list);
+  const previousClinics = sanitizeString(raw.previous_clinics);
+  const urgencyLevel = sanitizeString(raw.urgency_level);
+  const availabilityWindows = sanitizeString(raw.availability_windows);
+  const bestContactMethod = sanitizeString(raw.best_contact_method);
+  const consentToShare = raw.consent_to_share === true;
 
   if (!firstName) errors.first_name = validationError("first_name_required", locale);
   if (!lastName) errors.last_name = validationError("last_name_required", locale);
@@ -104,10 +139,42 @@ export function validateLeadPayload(body: unknown): ValidationResult {
     errors.budget_range = validationError("budget_range_invalid", locale);
   }
 
+  if (exactAge !== undefined && (isNaN(exactAge) || exactAge < 18 || exactAge > 50)) {
+    // Optional field, so we don't add error, just ignore invalid values
+  }
+
+  if (testStatus && !["ready", "pending", "not-started", "unknown"].includes(testStatus)) {
+    // Optional field, so we don't add error, just ignore invalid values
+  }
+
   if (!city) errors.city = validationError("city_required", locale);
 
   if (!gdprConsent) {
     errors.gdpr_consent = validationError("gdpr_required", locale);
+  }
+
+  if (!consentToShare) {
+    errors.consent_to_share = validationError("consent_to_share_required", locale);
+  }
+
+  // Validate urgency_level if provided
+  if (urgencyLevel && !["ASAP_0_30", "SOON_1_3", "MID_3_6", "LATER_6_12", "INFO_ONLY"].includes(urgencyLevel)) {
+    // Optional field, ignore invalid values
+  }
+
+  // Validate primary_factor if provided
+  if (primaryFactor && !["UNKNOWN", "MALE_FACTOR", "FEMALE_FACTOR", "BOTH", "UNEXPLAINED", "ENDOMETRIOSIS", "LOW_OVARIAN_RESERVE", "TUBAL", "PCOS", "OTHER"].includes(primaryFactor)) {
+    // Optional field, ignore invalid values
+  }
+
+  // Validate voucher_status if provided
+  if (voucherStatus && !["NONE", "APPLIED", "APPROVED_ASSMB", "APPROVED_NATIONAL", "APPROVED_OTHER"].includes(voucherStatus)) {
+    // Optional field, ignore invalid values
+  }
+
+  // Validate best_contact_method if provided
+  if (bestContactMethod && !["PHONE", "WHATSAPP", "EMAIL"].includes(bestContactMethod)) {
+    // Optional field, ignore invalid values
   }
 
   if (Object.keys(errors).length > 0) {
@@ -124,13 +191,27 @@ export function validateLeadPayload(body: unknown): ValidationResult {
       phone,
       email: email.toLowerCase(),
       age_range: ageRange,
+      exact_age: exactAge && !isNaN(exactAge) && exactAge >= 18 && exactAge <= 50 ? exactAge : undefined,
       tried_ivf: triedIvf,
       timeline,
       budget_range: budgetRange,
+      test_status: testStatus && ["ready", "pending", "not-started", "unknown"].includes(testStatus) ? testStatus : undefined,
       city,
       message: message || undefined,
       gdpr_consent: gdprConsent,
       locale,
+      // Phase 2 fields
+      female_age_exact: femaleAgeExact && !isNaN(femaleAgeExact) && femaleAgeExact >= 18 && femaleAgeExact <= 50 ? femaleAgeExact : undefined,
+      male_age_exact: maleAgeExact && !isNaN(maleAgeExact) && maleAgeExact >= 18 && maleAgeExact <= 70 ? maleAgeExact : undefined,
+      primary_factor: primaryFactor && ["UNKNOWN", "MALE_FACTOR", "FEMALE_FACTOR", "BOTH", "UNEXPLAINED", "ENDOMETRIOSIS", "LOW_OVARIAN_RESERVE", "TUBAL", "PCOS", "OTHER"].includes(primaryFactor) ? primaryFactor : undefined,
+      voucher_status: voucherStatus && ["NONE", "APPLIED", "APPROVED_ASSMB", "APPROVED_NATIONAL", "APPROVED_OTHER"].includes(voucherStatus) ? voucherStatus : undefined,
+      has_recent_tests: hasRecentTests || undefined,
+      tests_list: testsList || undefined,
+      previous_clinics: previousClinics || undefined,
+      urgency_level: urgencyLevel && ["ASAP_0_30", "SOON_1_3", "MID_3_6", "LATER_6_12", "INFO_ONLY"].includes(urgencyLevel) ? urgencyLevel : undefined,
+      availability_windows: availabilityWindows || undefined,
+      best_contact_method: bestContactMethod && ["PHONE", "WHATSAPP", "EMAIL"].includes(bestContactMethod) ? bestContactMethod : undefined,
+      consent_to_share: consentToShare,
     },
   };
 }

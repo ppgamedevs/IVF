@@ -18,12 +18,26 @@ interface FormData {
   phone: string;
   email: string;
   ageRange: string;
+  exactAge: string;
   triedIVF: string;
   timeline: string;
   budgetRange: string;
+  testStatus: string;
   city: string;
   message: string;
   gdprConsent: boolean;
+  // Phase 2 fields
+  femaleAgeExact: string;
+  maleAgeExact: string;
+  primaryFactor: string;
+  voucherStatus: string;
+  hasRecentTests: string;
+  testsList: string;
+  previousClinics: string;
+  urgencyLevel: string;
+  availabilityWindows: string;
+  bestContactMethod: string;
+  consentToShare: boolean;
 }
 
 const initialFormData: FormData = {
@@ -32,12 +46,25 @@ const initialFormData: FormData = {
   phone: "",
   email: "",
   ageRange: "",
+  exactAge: "",
   triedIVF: "",
   timeline: "",
   budgetRange: "",
+  testStatus: "",
   city: "",
   message: "",
   gdprConsent: false,
+  femaleAgeExact: "",
+  maleAgeExact: "",
+  primaryFactor: "",
+  voucherStatus: "",
+  hasRecentTests: "",
+  testsList: "",
+  previousClinics: "",
+  urgencyLevel: "",
+  availabilityWindows: "",
+  bestContactMethod: "",
+  consentToShare: false,
 };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -98,6 +125,48 @@ export default function LeadForm() {
     { value: "prefer-discuss", label: t("budgetPreferDiscuss") },
   ];
 
+  const testStatuses = [
+    { value: "ready", label: t("testStatusReady") },
+    { value: "pending", label: t("testStatusPending") },
+    { value: "not-started", label: t("testStatusNotStarted") },
+    { value: "unknown", label: t("testStatusUnknown") },
+  ];
+
+  const primaryFactors = [
+    { value: "UNKNOWN", label: t("primaryFactorUnknown") },
+    { value: "MALE_FACTOR", label: t("primaryFactorMale") },
+    { value: "FEMALE_FACTOR", label: t("primaryFactorFemale") },
+    { value: "BOTH", label: t("primaryFactorBoth") },
+    { value: "UNEXPLAINED", label: t("primaryFactorUnexplained") },
+    { value: "ENDOMETRIOSIS", label: t("primaryFactorEndometriosis") },
+    { value: "LOW_OVARIAN_RESERVE", label: t("primaryFactorLowReserve") },
+    { value: "TUBAL", label: t("primaryFactorTubal") },
+    { value: "PCOS", label: t("primaryFactorPCOS") },
+    { value: "OTHER", label: t("primaryFactorOther") },
+  ];
+
+  const voucherStatuses = [
+    { value: "NONE", label: t("voucherStatusNone") },
+    { value: "APPLIED", label: t("voucherStatusApplied") },
+    { value: "APPROVED_ASSMB", label: t("voucherStatusApprovedAssmb") },
+    { value: "APPROVED_NATIONAL", label: t("voucherStatusApprovedNational") },
+    { value: "APPROVED_OTHER", label: t("voucherStatusApprovedOther") },
+  ];
+
+  const urgencyLevels = [
+    { value: "ASAP_0_30", label: t("urgencyAsap") },
+    { value: "SOON_1_3", label: t("urgencySoon") },
+    { value: "MID_3_6", label: t("urgencyMid") },
+    { value: "LATER_6_12", label: t("urgencyLater") },
+    { value: "INFO_ONLY", label: t("urgencyInfo") },
+  ];
+
+  const bestContactMethods = [
+    { value: "PHONE", label: t("bestContactPhone") },
+    { value: "WHATSAPP", label: t("bestContactWhatsapp") },
+    { value: "EMAIL", label: t("bestContactEmail") },
+  ];
+
   function validate(): boolean {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
 
@@ -120,8 +189,10 @@ export default function LeadForm() {
     if (!formData.triedIVF) newErrors.triedIVF = t("errorTriedIVF");
     if (!formData.timeline) newErrors.timeline = t("errorTimeline");
     if (!formData.budgetRange) newErrors.budgetRange = t("errorBudgetRange");
+    if (!formData.urgencyLevel) newErrors.urgencyLevel = t("errorTimeline"); // Reuse timeline error
     if (!formData.city.trim()) newErrors.city = t("errorCity");
     if (!formData.gdprConsent) newErrors.gdprConsent = t("errorGdpr");
+    if (!formData.consentToShare) newErrors.consentToShare = t("consentToShareRequired");
 
     setErrors(newErrors);
     const errorKeys = Object.keys(newErrors);
@@ -150,12 +221,26 @@ export default function LeadForm() {
           phone: formData.phone.trim(),
           email: formData.email.trim(),
           age_range: formData.ageRange,
+          exact_age: formData.exactAge ? parseInt(formData.exactAge, 10) : undefined,
           tried_ivf: formData.triedIVF,
           timeline: formData.timeline,
           budget_range: formData.budgetRange,
+          test_status: formData.testStatus || undefined,
           city: formData.city.trim(),
           message: formData.message.trim() || undefined,
           gdpr_consent: formData.gdprConsent,
+          // Phase 2 fields
+          female_age_exact: formData.femaleAgeExact ? parseInt(formData.femaleAgeExact, 10) : undefined,
+          male_age_exact: formData.maleAgeExact ? parseInt(formData.maleAgeExact, 10) : undefined,
+          primary_factor: formData.primaryFactor || undefined,
+          voucher_status: formData.voucherStatus || undefined,
+          has_recent_tests: formData.hasRecentTests ? formData.hasRecentTests === "yes" : undefined,
+          tests_list: formData.testsList?.trim() || undefined,
+          previous_clinics: formData.previousClinics?.trim() || undefined,
+          urgency_level: formData.urgencyLevel || (formData.timeline === "asap" ? "ASAP_0_30" : formData.timeline === "1-3months" ? "SOON_1_3" : "INFO_ONLY"),
+          availability_windows: formData.availabilityWindows?.trim() || undefined,
+          best_contact_method: formData.bestContactMethod || undefined,
+          consent_to_share: formData.consentToShare,
           locale,
           _company: honeypotRef.current?.value || "",
           _rendered: renderedAtRef.current,
@@ -444,7 +529,7 @@ export default function LeadForm() {
               )}
             </div>
 
-            {/* 7. Budget */}
+            {/* 7. Financing Method */}
             <div className="mb-4">
               <FormSelect
                 id="budgetRange"
@@ -458,6 +543,220 @@ export default function LeadForm() {
                 errorId="err-budgetRange"
                 required
               />
+            </div>
+
+            {/* 7b. Exact Age (optional) */}
+            <div className="mb-4">
+              <label htmlFor="exactAge" className={labelClasses}>
+                {t("exactAge")}
+              </label>
+              <input
+                type="number"
+                id="exactAge"
+                min="18"
+                max="50"
+                value={formData.exactAge}
+                onChange={(e) => updateField("exactAge", e.target.value)}
+                placeholder={t("exactAgePlaceholder")}
+                className={inputClasses}
+                disabled={submitting}
+              />
+              {t("exactAgeHelper") && (
+                <p className="mt-1 text-xs text-medical-muted">
+                  {t("exactAgeHelper")}
+                </p>
+              )}
+            </div>
+
+            {/* 7c. Test Status (optional) */}
+            <div className="mb-4">
+              <FormSelect
+                id="testStatus"
+                label={t("testStatus")}
+                placeholder={t("testStatusPlaceholder")}
+                options={testStatuses}
+                value={formData.testStatus}
+                onChange={(v) => updateField("testStatus", v)}
+                disabled={submitting}
+              />
+            </div>
+
+            {/* Phase 2: Medical Qualifiers Section */}
+            <div className="mb-6 mt-6 pt-6 border-t border-medical-border">
+              <h3 className="text-base font-semibold text-medical-heading mb-1">{t("medicalQualifiersTitle")}</h3>
+              <p className="text-sm text-medical-muted mb-4">{t("medicalQualifiersSubtitle")}</p>
+
+              {/* Urgency Level (required) */}
+              <div className="mb-4">
+                <FormSelect
+                  id="urgencyLevel"
+                  label={t("urgencyLevel")}
+                  placeholder={t("urgencyLevelPlaceholder")}
+                  options={urgencyLevels}
+                  value={formData.urgencyLevel}
+                  onChange={(v) => updateField("urgencyLevel", v)}
+                  disabled={submitting}
+                  error={errors.urgencyLevel}
+                  errorId="err-urgencyLevel"
+                  required
+                />
+              </div>
+
+              {/* Female Age Exact */}
+              <div className="mb-4">
+                <label htmlFor="femaleAgeExact" className={labelClasses}>
+                  {t("femaleAgeExact")}
+                </label>
+                <input
+                  type="number"
+                  id="femaleAgeExact"
+                  min="18"
+                  max="50"
+                  value={formData.femaleAgeExact}
+                  onChange={(e) => updateField("femaleAgeExact", e.target.value)}
+                  placeholder={t("femaleAgeExactPlaceholder")}
+                  className={inputClasses}
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* Male Age Exact */}
+              <div className="mb-4">
+                <label htmlFor="maleAgeExact" className={labelClasses}>
+                  {t("maleAgeExact")}
+                </label>
+                <input
+                  type="number"
+                  id="maleAgeExact"
+                  min="18"
+                  max="70"
+                  value={formData.maleAgeExact}
+                  onChange={(e) => updateField("maleAgeExact", e.target.value)}
+                  placeholder={t("maleAgeExactPlaceholder")}
+                  className={inputClasses}
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* Primary Factor */}
+              <div className="mb-4">
+                <FormSelect
+                  id="primaryFactor"
+                  label={t("primaryFactor")}
+                  placeholder={t("primaryFactorPlaceholder")}
+                  options={primaryFactors}
+                  value={formData.primaryFactor}
+                  onChange={(v) => updateField("primaryFactor", v)}
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* Voucher Status */}
+              <div className="mb-4">
+                <FormSelect
+                  id="voucherStatus"
+                  label={t("voucherStatus")}
+                  placeholder={t("voucherStatusPlaceholder")}
+                  options={voucherStatuses}
+                  value={formData.voucherStatus}
+                  onChange={(v) => updateField("voucherStatus", v)}
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* Has Recent Tests */}
+              <div className="mb-4">
+                <label className={labelClasses}>{t("hasRecentTests")}</label>
+                <div className="flex gap-3 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => updateField("hasRecentTests", "yes")}
+                    disabled={submitting}
+                    className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                      formData.hasRecentTests === "yes"
+                        ? "border-primary-500 bg-primary-50 text-primary-700"
+                        : "border-medical-border bg-white text-medical-text hover:border-primary-200"
+                    }`}
+                  >
+                    {t("hasRecentTestsYes")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateField("hasRecentTests", "no")}
+                    disabled={submitting}
+                    className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                      formData.hasRecentTests === "no"
+                        ? "border-primary-500 bg-primary-50 text-primary-700"
+                        : "border-medical-border bg-white text-medical-text hover:border-primary-200"
+                    }`}
+                  >
+                    {t("hasRecentTestsNo")}
+                  </button>
+                </div>
+              </div>
+
+              {/* Tests List (conditional) */}
+              {formData.hasRecentTests === "yes" && (
+                <div className="mb-4">
+                  <label htmlFor="testsList" className={labelClasses}>
+                    {t("testsList")}
+                  </label>
+                  <input
+                    type="text"
+                    id="testsList"
+                    value={formData.testsList}
+                    onChange={(e) => updateField("testsList", e.target.value)}
+                    placeholder={t("testsListPlaceholder")}
+                    className={inputClasses}
+                    disabled={submitting}
+                  />
+                </div>
+              )}
+
+              {/* Previous Clinics */}
+              <div className="mb-4">
+                <label htmlFor="previousClinics" className={labelClasses}>
+                  {t("previousClinics")}
+                </label>
+                <input
+                  type="text"
+                  id="previousClinics"
+                  value={formData.previousClinics}
+                  onChange={(e) => updateField("previousClinics", e.target.value)}
+                  placeholder={t("previousClinicsPlaceholder")}
+                  className={inputClasses}
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* Availability Windows */}
+              <div className="mb-4">
+                <label htmlFor="availabilityWindows" className={labelClasses}>
+                  {t("availabilityWindows")}
+                </label>
+                <input
+                  type="text"
+                  id="availabilityWindows"
+                  value={formData.availabilityWindows}
+                  onChange={(e) => updateField("availabilityWindows", e.target.value)}
+                  placeholder={t("availabilityWindowsPlaceholder")}
+                  className={inputClasses}
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* Best Contact Method */}
+              <div className="mb-4">
+                <FormSelect
+                  id="bestContactMethod"
+                  label={t("bestContactMethod")}
+                  placeholder={t("bestContactMethodPlaceholder")}
+                  options={bestContactMethods}
+                  value={formData.bestContactMethod}
+                  onChange={(v) => updateField("bestContactMethod", v)}
+                  disabled={submitting}
+                />
+              </div>
             </div>
 
             {/* 8. City */}
@@ -517,6 +816,30 @@ export default function LeadForm() {
                 </span>
               </label>
               {errors.gdprConsent && <p id="err-gdpr" role="alert" className="mt-1 text-sm text-red-500 ml-8">{errors.gdprConsent}</p>}
+            </div>
+
+            {/* Consent to Share - Explicit GDPR Consent */}
+            <div className="mb-6">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.consentToShare}
+                  onChange={(e) => updateField("consentToShare", e.target.checked)}
+                  disabled={submitting}
+                  aria-invalid={!!errors.consentToShare}
+                  aria-describedby={errors.consentToShare ? "err-consentToShare" : undefined}
+                  required
+                  className="mt-0.5 w-5 h-5 rounded border-medical-border text-primary-600 focus:ring-primary-500 cursor-pointer flex-shrink-0 disabled:opacity-60"
+                />
+                <span className={`text-xs sm:text-sm text-medical-muted leading-relaxed ${errors.consentToShare ? "text-red-500" : ""}`}>
+                  {t("consentToShareText")}{" "}
+                  <span className="text-red-400">*</span>
+                </span>
+              </label>
+              <p className="text-xs text-medical-muted mt-1 ml-8">
+                {t("consentToShareHelper")}
+              </p>
+              {errors.consentToShare && <p id="err-consentToShare" role="alert" className="mt-1 text-sm text-red-500 ml-8">{errors.consentToShare}</p>}
             </div>
 
             {/* Submit */}
