@@ -37,7 +37,6 @@ interface Lead {
 
 export default function LeadDetailPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const params = useParams();
   const token = searchParams.get("token");
   const leadId = params.id as string;
