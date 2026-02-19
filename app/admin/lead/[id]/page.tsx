@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
 
+// Admin panel for lead management
+
 interface Clinic {
   id: string;
   name: string;
