@@ -49,6 +49,17 @@ function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/**
+ * Format UUID to a shorter, modern ID (first 8 chars, uppercase).
+ * Example: "c33f4a67-b9b3-463c-85ca-a18bcd414ff2" -> "C33F4A67"
+ */
+function formatLeadId(uuid: string): string {
+  if (!uuid) return uuid;
+  // Remove dashes and take first 8 characters, uppercase
+  const short = uuid.replace(/-/g, "").slice(0, 8).toUpperCase();
+  return short;
+}
+
 function row(label: string, value: string, isHtml = false): string {
   return `
     <tr>
@@ -301,7 +312,7 @@ function buildInternalHtml(
         <p style="font-size:15px;color:#334155;line-height:1.7;margin:0 0 24px;">${escapeHtml(s.intro)}</p>
 
         <table style="width:100%;border-collapse:collapse;font-size:15px;color:#334155;margin-bottom:24px;">
-          ${row(s.leadIdLabel, leadId)}
+          ${row(s.leadIdLabel, formatLeadId(leadId))}
           ${row(s.submittedAtLabel, dateStr)}
           ${row(clinicLabel("name", locale), `${lead.first_name} ${lead.last_name}`)}
           ${row(clinicLabel("email", locale), `<a href="mailto:${escapeHtml(lead.email)}" style="color:#2563eb;text-decoration:none;">${escapeHtml(lead.email)}</a>`, true)}
