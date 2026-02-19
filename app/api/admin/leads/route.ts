@@ -17,17 +17,21 @@ export async function GET(request: NextRequest) {
     const sql = getDb();
     const leads = await sql`
       SELECT 
-        id,
-        first_name,
-        last_name,
-        phone,
-        city,
-        timeline,
-        budget_range,
-        status,
-        created_at
-      FROM leads
-      ORDER BY created_at DESC
+        l.id,
+        l.first_name,
+        l.last_name,
+        l.phone,
+        l.city,
+        l.timeline,
+        l.budget_range,
+        l.status,
+        l.created_at,
+        l.assigned_clinic_id,
+        c.name as clinic_name,
+        c.city as clinic_city
+      FROM leads l
+      LEFT JOIN clinics c ON l.assigned_clinic_id = c.id
+      ORDER BY l.created_at DESC
       LIMIT 100
     `;
 

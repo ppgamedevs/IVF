@@ -15,6 +15,9 @@ interface Lead {
   budget_range: string;
   status: string;
   created_at: string;
+  assigned_clinic_id: string | null;
+  clinic_name: string | null;
+  clinic_city: string | null;
 }
 
 function AdminPageContent() {
@@ -165,6 +168,9 @@ function AdminPageContent() {
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Clinică atribuită
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Data
                     </th>
                   </tr>
@@ -212,6 +218,16 @@ function AdminPageContent() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(lead.status || "new")}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {lead.clinic_name ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                            {lead.clinic_name}
+                            {lead.clinic_city && ` (${lead.clinic_city})`}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {formatDate(lead.created_at)}

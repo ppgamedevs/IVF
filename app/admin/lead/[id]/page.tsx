@@ -421,7 +421,7 @@ Echipa FIV Match`;
                   Mesaj
                 </h2>
                 <div className="bg-gray-50 p-4 rounded border border-gray-200">
-                  <p className="text-sm text-gray-900 whitespace-pre-wrap">
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap break-words overflow-wrap-anywhere max-w-full">
                     {lead.message}
                   </p>
                 </div>
