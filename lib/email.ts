@@ -10,6 +10,7 @@ import {
   clinicTimeline,
   clinicBudget,
   clinicGdpr,
+  ageRangeDisplay,
   intentLabel,
   userSubject,
   userEmailStrings,
@@ -161,11 +162,38 @@ function buildClinicHtml(
 }
 
 // ---------------------------------------------------------------------------
-// User confirmation email - fully localized, warm and human
+// User confirmation email - fully localized, with full data summary
 // ---------------------------------------------------------------------------
 
-export function buildUserHtml(firstName: string, locale: SupportedLocale): string {
-  const s = userEmailStrings(escapeHtml(firstName), locale);
+export function buildUserHtml(
+  lead: LeadPayload,
+  submittedAt: string,
+): string {
+  const locale = lead.locale;
+  const s = userEmailStrings(escapeHtml(lead.first_name), locale);
+  const dateStr = new Date(submittedAt).toLocaleString(
+    locale === "ro" ? "ro-RO" : "en-GB",
+    { dateStyle: "long", timeStyle: "short" },
+  );
+
+  const dataRows = [
+    row(clinicLabel("name", locale), `${lead.first_name} ${lead.last_name}`),
+    row(clinicLabel("email", locale), lead.email),
+    row(clinicLabel("phone", locale), lead.phone),
+    row(clinicLabel("ageRange", locale), ageRangeDisplay(lead.age_range, locale)),
+    row(clinicLabel("triedIvf", locale), clinicYesNo(lead.tried_ivf, locale)),
+    row(clinicLabel("timeline", locale), clinicTimeline(lead.timeline, locale)),
+    row(clinicLabel("budgetRange", locale), clinicBudget(lead.budget_range, locale)),
+    row(clinicLabel("city", locale), lead.city),
+    row(
+      clinicLabel("message", locale),
+      lead.message?.trim() || s.noMessage,
+    ),
+    row(
+      locale === "ro" ? "Data trimiterii" : "Submitted at",
+      dateStr,
+    ),
+  ].join("");
 
   return `
 <!DOCTYPE html>
@@ -173,10 +201,11 @@ export function buildUserHtml(firstName: string, locale: SupportedLocale): strin
 <head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background-color:#f8fafc;">
   <div style="max-width:600px;margin:0 auto;padding:32px 24px;">
-    <div style="background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">
+    <div style="background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
 
-      <div style="background:#2563eb;padding:32px;text-align:center;">
+      <div style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);padding:32px;text-align:center;">
         <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;">${s.heading}</h1>
+        <p style="margin:10px 0 0;color:rgba(255,255,255,0.9);font-size:14px;">${locale === "ro" ? "Vei fi contactat de clinicile potrivite in maximum 24 de ore." : "You will be contacted by a suitable clinic within 24 hours."}</p>
       </div>
 
       <div style="padding:32px;">
@@ -184,6 +213,15 @@ export function buildUserHtml(firstName: string, locale: SupportedLocale): strin
         <p style="font-size:16px;color:#334155;line-height:1.7;margin:0 0 16px;">${s.body1}</p>
         <p style="font-size:16px;color:#334155;line-height:1.7;margin:0 0 16px;">${s.body2}</p>
         <p style="font-size:16px;color:#334155;line-height:1.7;margin:0 0 24px;">${s.body3}</p>
+
+        <div style="margin-bottom:24px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+          <div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+            <p style="margin:0;font-size:15px;color:#1e3a5f;font-weight:600;">${s.dataSummaryTitle}</p>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:15px;color:#334155;">
+            ${dataRows}
+          </table>
+        </div>
 
         <div style="padding:20px;background:#f0f7ff;border-radius:8px;margin-bottom:24px;">
           <p style="margin:0;font-size:14px;color:#1e3a5f;font-weight:600;">${s.nextTitle}</p>
@@ -432,7 +470,7 @@ export async function sendLeadEmails({
       from,
       to: lead.email,
       subject: userSubject(locale),
-      html: buildUserHtml(lead.first_name, locale),
+      html: buildUserHtml(lead, submittedAt),
     }),
   ]);
 

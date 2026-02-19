@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
         from,
         to: lead.email,
         subject: userSubject(lead.locale),
-        html: buildUserHtml(lead.first_name, lead.locale),
+        html: buildUserHtml(lead, now),
       }),
     ]).catch((err) => {
       console.error("Email sending failed:", err);

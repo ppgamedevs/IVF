@@ -216,6 +216,19 @@ export function clinicBudget(value: string, locale: SupportedLocale): string {
   return bi ? t(bi, locale) : value;
 }
 
+const AGE_RANGE_LABELS: Record<string, Bi> = {
+  "under-30": { ro: "Sub 30 ani", en: "Under 30" },
+  "30-34": { ro: "30 - 34 ani", en: "30 - 34" },
+  "35-37": { ro: "35 - 37 ani", en: "35 - 37" },
+  "38-40": { ro: "38 - 40 ani", en: "38 - 40" },
+  "41+": { ro: "41+ ani", en: "41+" },
+};
+
+export function ageRangeDisplay(value: string, locale: SupportedLocale): string {
+  const bi = AGE_RANGE_LABELS[value];
+  return bi ? t(bi, locale) : value;
+}
+
 const GDPR_YES: Bi = { ro: "Da", en: "Yes" };
 
 export function clinicGdpr(locale: SupportedLocale): string {
@@ -241,6 +254,8 @@ export interface UserEmailStrings {
   body1: string;
   body2: string;
   body3: string;
+  dataSummaryTitle: string;
+  noMessage: string;
   nextTitle: string;
   step1: string;
   step2: string;
@@ -264,7 +279,9 @@ export function userEmailStrings(
       body2:
         "Dupa verificare, o clinica partenera te va contacta pentru a discuta pasii urmatori.",
       body3:
-        "Daca ai intrebari intre timp, raspunde la acest email.",
+        "Mai jos gasesti un rezumat al datelor trimise, ca dovada a inregistrarii solicitarii tale.",
+      dataSummaryTitle: "Rezumatul solicitarii tale",
+      noMessage: "—",
       nextTitle: "Ce urmeaza?",
       step1: "Verificam solicitarea ta",
       step2: "O clinica partenera te va contacta dupa aprobare",
@@ -285,7 +302,9 @@ export function userEmailStrings(
     body2:
       "After verification, a partner clinic will contact you to discuss next steps.",
     body3:
-      "If you have any questions in the meantime, reply to this email.",
+      "Below is a summary of the data you submitted, as proof that we have received your request.",
+    dataSummaryTitle: "Summary of your request",
+    noMessage: "—",
     nextTitle: "What happens next?",
     step1: "We verify your request",
     step2: "A partner clinic will contact you after approval",
