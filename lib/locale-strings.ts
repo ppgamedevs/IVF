@@ -277,14 +277,14 @@ export function userEmailStrings(
       body1:
         "Multumim pentru solicitare. Am primit detaliile tale si le vom verifica in curand.",
       body2:
-        "Dupa verificare, o clinica partenera te va contacta pentru a discuta pasii urmatori.",
+        "Te vom contacta telefonic pentru confirmare, iar apoi o clinica partenera te va contacta pentru a discuta pasii urmatori.",
       body3:
         "Mai jos gasesti un rezumat al datelor trimise, ca dovada a inregistrarii solicitarii tale.",
       dataSummaryTitle: "Rezumatul solicitarii tale",
       noMessage: "—",
       nextTitle: "Ce urmeaza?",
-      step1: "Verificam solicitarea ta",
-      step2: "O clinica partenera te va contacta dupa aprobare",
+      step1: "Te contactam telefonic pentru confirmare",
+      step2: "Dupa aprobare, o clinica partenera te va contacta",
       step3: "Discuti direct cu clinica, fara obligatii",
       closing: "Cu respect,",
       team: "Echipa FIV Match",
@@ -300,14 +300,14 @@ export function userEmailStrings(
     body1:
       "Thank you for your request. We have received your details and will verify them shortly.",
     body2:
-      "After verification, a partner clinic will contact you to discuss next steps.",
+      "We will contact you by phone for confirmation, and then a partner clinic will contact you to discuss next steps.",
     body3:
       "Below is a summary of the data you submitted, as proof that we have received your request.",
     dataSummaryTitle: "Summary of your request",
     noMessage: "—",
     nextTitle: "What happens next?",
-    step1: "We verify your request",
-    step2: "A partner clinic will contact you after approval",
+    step1: "We contact you by phone for confirmation",
+    step2: "After approval, a partner clinic will contact you",
     step3: "You discuss directly with the clinic, no obligation",
     closing: "Best regards,",
     team: "The FIV Match Team",

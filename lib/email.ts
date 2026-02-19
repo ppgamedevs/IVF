@@ -53,7 +53,7 @@ function row(label: string, value: string, isHtml = false): string {
   return `
     <tr>
       <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-weight:600;color:#64748b;width:40%;vertical-align:top;">${escapeHtml(label)}</td>
-      <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;">${isHtml ? value : escapeHtml(value)}</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;word-wrap:break-word;word-break:break-word;white-space:pre-wrap;max-width:60%;">${isHtml ? value : escapeHtml(value)}</td>
     </tr>`;
 }
 
@@ -171,9 +171,14 @@ export function buildUserHtml(
 ): string {
   const locale = lead.locale;
   const s = userEmailStrings(escapeHtml(lead.first_name), locale);
+  // Format date in Romania timezone (Europe/Bucharest)
   const dateStr = new Date(submittedAt).toLocaleString(
     locale === "ro" ? "ro-RO" : "en-GB",
-    { dateStyle: "long", timeStyle: "short" },
+    { 
+      dateStyle: "long", 
+      timeStyle: "short",
+      timeZone: "Europe/Bucharest",
+    },
   );
 
   const dataRows = [
@@ -204,8 +209,8 @@ export function buildUserHtml(
     <div style="background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
 
       <div style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);padding:32px;text-align:center;">
-        <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;">${s.heading}</h1>
-        <p style="margin:10px 0 0;color:rgba(255,255,255,0.9);font-size:14px;">${locale === "ro" ? "Vei fi contactat de clinicile potrivite in maximum 24 de ore." : "You will be contacted by a suitable clinic within 24 hours."}</p>
+        <h1 style="margin:0;color:#ffffff !important;font-size:22px;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,0.1);">${s.heading}</h1>
+        <p style="margin:10px 0 0;color:#ffffff !important;font-size:14px;opacity:0.95;">${locale === "ro" ? "Vei fi contactat de clinicile potrivite in maximum 24 de ore." : "You will be contacted by a suitable clinic within 24 hours."}</p>
       </div>
 
       <div style="padding:32px;">
@@ -263,7 +268,11 @@ function buildInternalHtml(
   const s = internalEmailStrings(locale);
   const dateStr = new Date(submittedAt).toLocaleString(
     locale === "ro" ? "ro-RO" : "en-GB",
-    { dateStyle: "long", timeStyle: "short" },
+    { 
+      dateStyle: "long", 
+      timeStyle: "short",
+      timeZone: "Europe/Bucharest",
+    },
   );
 
   const intentBadge = (() => {
@@ -297,7 +306,7 @@ function buildInternalHtml(
           ${row(clinicLabel("name", locale), `${lead.first_name} ${lead.last_name}`)}
           ${row(clinicLabel("email", locale), `<a href="mailto:${escapeHtml(lead.email)}" style="color:#2563eb;text-decoration:none;">${escapeHtml(lead.email)}</a>`, true)}
           ${row(clinicLabel("phone", locale), `<a href="tel:${escapeHtml(lead.phone)}" style="color:#2563eb;text-decoration:none;">${escapeHtml(lead.phone)}</a>`, true)}
-          ${row(clinicLabel("ageRange", locale), lead.age_range)}
+          ${row(clinicLabel("ageRange", locale), ageRangeDisplay(lead.age_range, locale))}
           ${row(clinicLabel("triedIvf", locale), clinicYesNo(lead.tried_ivf, locale))}
           ${row(clinicLabel("timeline", locale), clinicTimeline(lead.timeline, locale))}
           ${row(clinicLabel("budgetRange", locale), clinicBudget(lead.budget_range, locale))}
