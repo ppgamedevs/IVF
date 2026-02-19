@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
 
@@ -37,7 +37,7 @@ interface Lead {
   clinic_email: string | null;
 }
 
-export default function LeadDetailPage() {
+function LeadDetailPageContent() {
   const searchParams = useSearchParams();
   const params = useParams();
   const token = searchParams.get("token");
@@ -568,5 +568,17 @@ Echipa FIV Match`;
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LeadDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center text-gray-600">Se încarcă...</div>
+      </div>
+    }>
+      <LeadDetailPageContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 interface Lead {
@@ -15,7 +15,7 @@ interface Lead {
   created_at: string;
 }
 
-export default function AdminPage() {
+function AdminPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
@@ -223,5 +223,17 @@ export default function AdminPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center text-gray-600">Se încarcă...</div>
+      </div>
+    }>
+      <AdminPageContent />
+    </Suspense>
   );
 }
