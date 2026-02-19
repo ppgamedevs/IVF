@@ -3,6 +3,8 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 interface Lead {
   id: string;
   first_name: string;

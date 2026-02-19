@@ -6,6 +6,8 @@ import Link from "next/link";
 
 // Admin panel for lead management
 
+export const dynamic = "force-dynamic";
+
 interface Clinic {
   id: string;
   name: string;
