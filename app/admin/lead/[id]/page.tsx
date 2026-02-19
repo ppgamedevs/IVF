@@ -529,7 +529,7 @@ Echipa FIV Match`;
                   </button>
                 </div>
 
-                {lead.status === "assigned" && lead.status !== "sent" && (
+                {lead.status === "assigned" && (
                   <button
                     onClick={() => handleAction("send", "send")}
                     disabled={actionLoading === "send"}
