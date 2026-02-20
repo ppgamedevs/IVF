@@ -78,7 +78,6 @@ export function trackFormSubmitted(params: {
   };
 
   gtag("event", "form_submitted", eventParams);
-  pushToDataLayer("form_submitted", eventParams);
 }
 
 /**

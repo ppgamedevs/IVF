@@ -6,7 +6,6 @@ import FormSelect from "./FormSelect";
 import {
   trackFormStart,
   trackFormSubmit,
-  trackFormSubmitted,
   trackFormError,
   trackGenerateLead,
   trackConversion,
@@ -273,13 +272,11 @@ export default function LeadForm() {
         return;
       }
 
-      const leadScore: string = result.lead_score || "high";
-
-      trackFormSubmitted({
-        locale,
-        lead_score: leadScore,
-        city: formData.city.trim(),
-      });
+      if (typeof window !== "undefined" && window.gtag) {
+        window.gtag("event", "form_submitted", {
+          form_name: "lead_form",
+        });
+      }
 
       trackGenerateLead({
         timeline,
