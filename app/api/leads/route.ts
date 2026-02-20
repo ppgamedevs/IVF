@@ -293,7 +293,7 @@ export async function POST(request: NextRequest) {
     const resend = getResend();
     const from = getFromAddress();
 
-    Promise.allSettled([
+    const emailResults = await Promise.allSettled([
       sendInternalNotification({
         lead,
         leadId,
@@ -306,9 +306,21 @@ export async function POST(request: NextRequest) {
         subject: userSubject(lead.locale),
         html: buildUserHtml(lead, now),
       }),
-    ]).catch((err) => {
-      console.error("Email sending failed:", err);
-    });
+    ]);
+
+    // Check results and log errors
+    const [internalResult, userEmailResult] = emailResults;
+    
+    if (internalResult.status === "rejected") {
+      console.error("[email] Failed to send internal notification:", internalResult.reason);
+    }
+    
+    if (userEmailResult.status === "rejected") {
+      console.error("[email] Failed to send user confirmation email:", userEmailResult.reason);
+      console.error("[email] Lead ID:", leadId, "User email:", lead.email);
+    } else if (userEmailResult.status === "fulfilled") {
+      console.log("[email] User confirmation email sent successfully to:", lead.email);
+    }
 
     return NextResponse.json(
       {

@@ -150,7 +150,7 @@
   },
   "finalCta": {
     "title": "Esti pregatit sa incepi?",
-    "description": "Un singur formular. Clinicile potrivite te contacteaza in 24 de ore.",
+    "description": "Un singur formular. Clinicile potrivite te contacteaza in 72 de ore.",
     "cta": "Trimite solicitarea",
     "trustLine": "Gratuit · Confidential · Fara obligatii"
   },
@@ -164,9 +164,9 @@
   },
   "thankYou": {
     "metaTitle": "Multumim - Solicitarea ta a fost trimisa | FIV Match",
-    "metaDescription": "Solicitarea ta a fost primita. Vei fi contactat de clinici private in maximum 24 de ore.",
+    "metaDescription": "Solicitarea ta a fost primita. Vei fi contactat de clinici private in maximum 72 de ore.",
     "title": "Solicitarea ta a fost trimisa.",
-    "subtitle": "Vei fi contactat in maximum 24 de ore.",
+    "subtitle": "Vei fi contactat in maximum 72 de ore.",
     "body": "Clinicile private partenere potrivite profilului tau vor analiza solicitarea si te vor contacta direct.",
     "backHome": "Inapoi la pagina principala"
   },

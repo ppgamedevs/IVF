@@ -150,7 +150,7 @@
   },
   "finalCta": {
     "title": "Ready to start?",
-    "description": "One form. The right clinics contact you within 24 hours.",
+    "description": "One form. The right clinics contact you within 72 hours.",
     "cta": "Submit your request",
     "trustLine": "Free · Confidential · No obligation"
   },
@@ -164,9 +164,9 @@
   },
   "thankYou": {
     "metaTitle": "Thank You - Your Request Was Sent | FIV Match",
-    "metaDescription": "Your request has been received. Private clinics will contact you within 24 hours.",
+    "metaDescription": "Your request has been received. Private clinics will contact you within 72 hours.",
     "title": "Your request has been submitted.",
-    "subtitle": "You will be contacted within 24 hours.",
+    "subtitle": "You will be contacted within 72 hours.",
     "body": "Private partner clinics matched to your profile will review your request and contact you directly.",
     "backHome": "Back to homepage"
   },
