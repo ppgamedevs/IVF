@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { sendPremiumLeadEmail } from "@/lib/email";
+import { sendPremiumLeadEmail, type SendPremiumLeadEmailParams } from "@/lib/email";
 
 /**
  * POST /api/admin/leads/[id]/send?token=...
@@ -52,7 +52,7 @@ export async function POST(
 
     // Send premium lead email
     await sendPremiumLeadEmail({
-      lead: lead as any,
+      lead: lead as SendPremiumLeadEmailParams["lead"],
       clinicEmail: lead.clinic_email,
       clinicName: lead.clinic_name || "Clinică",
     });

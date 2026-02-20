@@ -29,7 +29,8 @@ export async function POST(
         id, first_name, last_name, phone, email,
         age_range, exact_age, tried_ivf, timeline, budget_range, test_status, city,
         message, gdpr_consent, locale, ip_hash,
-        intent_level, status, created_at, phone_verified_at
+        intent_level, status, created_at, phone_verified_at,
+        consent_to_share
       FROM leads
       WHERE id = ${leadId}
         AND status = 'verified'
@@ -67,6 +68,7 @@ export async function POST(
       city: lead.city,
       message: lead.message || undefined,
       gdpr_consent: lead.gdpr_consent,
+      consent_to_share: Boolean(lead.consent_to_share),
       locale: lead.locale as "ro" | "en",
       phone_verified_at: lead.phone_verified_at || undefined,
     };

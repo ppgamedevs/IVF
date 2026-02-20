@@ -677,7 +677,7 @@ function buildPremiumLeadSheetHtml(data: PremiumLeadData): string {
           isRO ? "Verificare operator" : "Operator Verification",
           `<table style="width:100%;border-collapse:collapse;">
             ${verifiedAt ? row(isRO ? "Verificat la" : "Verified at", verifiedAt) : ""}
-            ${lead.call_attempts !== null && lead.call_attempts > 0 ? row(isRO ? "Încercări apel" : "Call attempts", String(lead.call_attempts)) : ""}
+            ${(lead.call_attempts ?? 0) > 0 ? row(isRO ? "Încercări apel" : "Call attempts", String(lead.call_attempts)) : ""}
             ${lead.operator_notes ? row(isRO ? "Note operator" : "Operator notes", lead.operator_notes) : ""}
           </table>`
         )}

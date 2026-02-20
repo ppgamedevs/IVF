@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
 
     params.push(limit, offset);
 
-    const leads = await sql.unsafe(leadsQuery, params);
+    const leads = await sql.query(leadsQuery, params);
 
     // Count total for pagination
     const countQuery = `
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       ${whereClause}
     `;
     const countParams = params.slice(0, -2); // Remove limit and offset
-    const countResult = await sql.unsafe(countQuery, countParams);
+    const countResult = await sql.query(countQuery, countParams);
     const total = parseInt(countResult[0]?.total || "0", 10);
 
     return NextResponse.json({

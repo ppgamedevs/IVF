@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +44,7 @@ function AdminPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 100, total: 0, totalPages: 1 });
 
-  const loadLeads = () => {
+  const loadLeads = useCallback(() => {
     if (!token) {
       setError("Token lipsă");
       setLoading(false);
@@ -53,17 +52,17 @@ function AdminPageContent() {
     }
 
     setLoading(true);
-    const params = new URLSearchParams({ token });
-    if (statusFilter) params.append("status", statusFilter);
-    if (tierFilter) params.append("tier", tierFilter);
-    if (cityFilter) params.append("city", cityFilter);
-    if (urgencyFilter) params.append("urgency", urgencyFilter);
-    if (voucherFilter) params.append("voucher", voucherFilter);
-    if (searchFilter) params.append("search", searchFilter);
-    params.append("page", String(pagination.page));
-    params.append("limit", String(pagination.limit));
+    const qs = new URLSearchParams({ token });
+    if (statusFilter) qs.append("status", statusFilter);
+    if (tierFilter) qs.append("tier", tierFilter);
+    if (cityFilter) qs.append("city", cityFilter);
+    if (urgencyFilter) qs.append("urgency", urgencyFilter);
+    if (voucherFilter) qs.append("voucher", voucherFilter);
+    if (searchFilter) qs.append("search", searchFilter);
+    qs.append("page", String(pagination.page));
+    qs.append("limit", String(pagination.limit));
 
-    fetch(`/api/admin/leads?${params}`)
+    fetch(`/api/admin/leads?${qs}`)
       .then((res) => {
         if (res.status === 403) {
           setError("Acces neautorizat");
@@ -87,11 +86,11 @@ function AdminPageContent() {
         setError("Eroare la încărcarea lead-urilor");
         setLoading(false);
       });
-  };
+  }, [token, statusFilter, tierFilter, cityFilter, urgencyFilter, voucherFilter, searchFilter, pagination.page, pagination.limit]);
 
   useEffect(() => {
     loadLeads();
-  }, [token, statusFilter, tierFilter, cityFilter, urgencyFilter, voucherFilter, searchFilter, pagination.page]);
+  }, [loadLeads]);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString("ro-RO", {
@@ -153,14 +152,6 @@ function AdminPageContent() {
     MID_3_6: "3-6 luni",
     LATER_6_12: "6-12 luni",
     INFO_ONLY: "Info",
-  };
-
-  const voucherLabels: Record<string, string> = {
-    NONE: "Fără",
-    APPLIED: "Aplicat",
-    APPROVED_ASSMB: "Aprobat ASSMB",
-    APPROVED_NATIONAL: "Aprobat Național",
-    APPROVED_OTHER: "Aprobat alt",
   };
 
   if (loading) {

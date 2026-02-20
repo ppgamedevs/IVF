@@ -60,20 +60,17 @@ export async function POST(request: NextRequest) {
 
     const sql = getDb();
     const now = new Date().toISOString();
+    const cityCoverageLiteral =
+      Array.isArray(city_coverage) && city_coverage.length > 0
+        ? "{" + city_coverage.map((c: string) => '"' + String(c).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"').join(",") + "}"
+        : "{}";
 
-    const result = await sql`
-      INSERT INTO clinics (name, email, city_coverage, active, notes, created_at, updated_at)
-      VALUES (
-        ${name},
-        ${email},
-        ${city_coverage ? sql.array(city_coverage) : sql`ARRAY[]::TEXT[]`},
-        ${active !== false},
-        ${notes || null},
-        ${now},
-        ${now}
-      )
-      RETURNING id, name, email, city_coverage, active, notes, created_at, updated_at
-    `;
+    const result = await sql.query(
+      `INSERT INTO clinics (name, email, city_coverage, active, notes, created_at, updated_at)
+       VALUES ($1, $2, $3::text[], $4, $5, $6, $7)
+       RETURNING id, name, email, city_coverage, active, notes, created_at, updated_at`,
+      [name, email, cityCoverageLiteral, active !== false, notes || null, now, now]
+    );
 
     return NextResponse.json({ clinic: result[0] }, { status: 201 });
   } catch (err) {

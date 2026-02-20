@@ -48,7 +48,7 @@ export async function POST(
     const now = new Date().toISOString();
 
     // Compute tier if verifying
-    let tierUpdate = {};
+    let tierUpdate: { lead_tier?: string; tier_reason?: string | null } = {};
     if (status === "VERIFIED_READY") {
       const tieringResult = computeLeadTier({
         operator_status: status,
@@ -96,7 +96,7 @@ export async function POST(
             END
           ELSE operator_notes
         END,
-        lead_tier = ${tierUpdate.lead_tier || lead.lead_tier || "D"},
+        lead_tier = ${tierUpdate.lead_tier ?? "D"},
         tier_reason = ${tierUpdate.tier_reason || null},
         updated_at = ${now}
       WHERE id = ${params.id}

@@ -45,7 +45,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params: routeParams }: { params: { id: string } }
 ) {
   const token = request.nextUrl.searchParams.get("token");
   const verifyToken = process.env.VERIFY_TOKEN;
@@ -75,8 +75,12 @@ export async function PUT(
       params.push(email);
     }
     if (city_coverage !== undefined) {
-      updates.push(`city_coverage = $${paramIndex++}`);
-      params.push(sql.array(city_coverage));
+      updates.push(`city_coverage = $${paramIndex++}::text[]`);
+      const pgArrayLiteral =
+        "{" +
+        city_coverage.map((c: string) => '"' + String(c).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"').join(",") +
+        "}";
+      params.push(pgArrayLiteral);
     }
     if (active !== undefined) {
       updates.push(`active = $${paramIndex++}`);
@@ -96,7 +100,7 @@ export async function PUT(
 
     updates.push(`updated_at = $${paramIndex++}`);
     params.push(now);
-    params.push(params.id); // For WHERE clause
+    params.push(routeParams.id); // For WHERE clause
 
     const query = `
       UPDATE clinics
@@ -105,7 +109,7 @@ export async function PUT(
       RETURNING id, name, email, city_coverage, active, notes, created_at, updated_at
     `;
 
-    const result = await sql.unsafe(query, params);
+    const result = await sql.query(query, params);
 
     if (result.length === 0) {
       return NextResponse.json({ error: "Clinică negăsită" }, { status: 404 });
