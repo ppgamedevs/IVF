@@ -79,6 +79,14 @@ const VALIDATION: Record<string, Bi> = {
     ro: "Trebuie sa accepti partajarea datelor pentru a continua",
     en: "You must agree to data sharing to continue",
   },
+  female_age_exact_required: {
+    ro: "Vârsta (femeie) este obligatorie",
+    en: "Female age is required",
+  },
+  urgency_level_required: {
+    ro: "Selectează un termen",
+    en: "Select a timeline",
+  },
   invalid_body: {
     ro: "Cererea nu este valida",
     en: "Invalid request body",

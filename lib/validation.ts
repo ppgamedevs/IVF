@@ -123,28 +123,27 @@ export function validateLeadPayload(body: unknown): ValidationResult {
     errors.email = validationError("email_invalid", locale);
   }
 
-  if (!VALID_AGE_RANGES.includes(ageRange)) {
-    errors.age_range = validationError("age_range_invalid", locale);
+  // female_age_exact is now the primary age field (required)
+  if (!femaleAgeExact || isNaN(femaleAgeExact) || femaleAgeExact < 18 || femaleAgeExact > 50) {
+    errors.female_age_exact = validationError("female_age_exact_required", locale);
+  }
+
+  // age_range accepted if valid (derived from female_age_exact by the form)
+  if (ageRange && !VALID_AGE_RANGES.includes(ageRange)) {
+    // Ignore invalid; API will still work without it
   }
 
   if (!["Yes", "No", "InProgress"].includes(triedIvf)) {
     errors.tried_ivf = validationError("tried_ivf_invalid", locale);
   }
 
-  if (!VALID_TIMELINES.includes(timeline)) {
-    errors.timeline = validationError("timeline_invalid", locale);
+  // timeline accepted if valid (derived from urgency_level by the form)
+  if (timeline && !VALID_TIMELINES.includes(timeline)) {
+    // Ignore invalid; API will still work without it
   }
 
   if (!VALID_BUDGET_RANGES.includes(budgetRange)) {
     errors.budget_range = validationError("budget_range_invalid", locale);
-  }
-
-  if (exactAge !== undefined && (isNaN(exactAge) || exactAge < 18 || exactAge > 50)) {
-    // Optional field, so we don't add error, just ignore invalid values
-  }
-
-  if (testStatus && !["ready", "pending", "not-started", "unknown"].includes(testStatus)) {
-    // Optional field, so we don't add error, just ignore invalid values
   }
 
   if (!city) errors.city = validationError("city_required", locale);
@@ -157,9 +156,9 @@ export function validateLeadPayload(body: unknown): ValidationResult {
     errors.consent_to_share = validationError("consent_to_share_required", locale);
   }
 
-  // Validate urgency_level if provided
-  if (urgencyLevel && !["ASAP_0_30", "SOON_1_3", "MID_3_6", "LATER_6_12", "INFO_ONLY"].includes(urgencyLevel)) {
-    // Optional field, ignore invalid values
+  // urgency_level is now required
+  if (!urgencyLevel || !["ASAP_0_30", "SOON_1_3", "MID_3_6", "LATER_6_12", "INFO_ONLY"].includes(urgencyLevel)) {
+    errors.urgency_level = validationError("urgency_level_required", locale);
   }
 
   // Validate primary_factor if provided
@@ -190,10 +189,10 @@ export function validateLeadPayload(body: unknown): ValidationResult {
       last_name: lastName,
       phone,
       email: email.toLowerCase(),
-      age_range: ageRange,
-      exact_age: exactAge && !isNaN(exactAge) && exactAge >= 18 && exactAge <= 50 ? exactAge : undefined,
+      age_range: VALID_AGE_RANGES.includes(ageRange) ? ageRange : (femaleAgeExact ? (femaleAgeExact < 30 ? "under-30" : femaleAgeExact <= 34 ? "30-34" : femaleAgeExact <= 37 ? "35-37" : femaleAgeExact <= 40 ? "38-40" : "41+") : "under-30"),
+      exact_age: femaleAgeExact ?? (exactAge && !isNaN(exactAge) && exactAge >= 18 && exactAge <= 50 ? exactAge : undefined),
       tried_ivf: triedIvf,
-      timeline,
+      timeline: VALID_TIMELINES.includes(timeline) ? timeline : (urgencyLevel === "ASAP_0_30" ? "asap" : urgencyLevel === "SOON_1_3" || urgencyLevel === "MID_3_6" ? "1-3months" : "researching"),
       budget_range: budgetRange,
       test_status: testStatus && ["ready", "pending", "not-started", "unknown"].includes(testStatus) ? testStatus : undefined,
       city,

@@ -17,26 +17,21 @@ interface FormData {
   lastName: string;
   phone: string;
   email: string;
-  ageRange: string;
-  exactAge: string;
-  triedIVF: string;
-  timeline: string;
-  budgetRange: string;
-  testStatus: string;
-  city: string;
-  message: string;
-  gdprConsent: boolean;
-  // Phase 2 fields
   femaleAgeExact: string;
   maleAgeExact: string;
+  city: string;
+  triedIVF: string;
   primaryFactor: string;
-  voucherStatus: string;
   hasRecentTests: string;
   testsList: string;
   previousClinics: string;
   urgencyLevel: string;
+  budgetRange: string;
+  voucherStatus: string;
   availabilityWindows: string;
   bestContactMethod: string;
+  message: string;
+  gdprConsent: boolean;
   consentToShare: boolean;
 }
 
@@ -45,25 +40,21 @@ const initialFormData: FormData = {
   lastName: "",
   phone: "",
   email: "",
-  ageRange: "",
-  exactAge: "",
-  triedIVF: "",
-  timeline: "",
-  budgetRange: "",
-  testStatus: "",
-  city: "",
-  message: "",
-  gdprConsent: false,
   femaleAgeExact: "",
   maleAgeExact: "",
+  city: "",
+  triedIVF: "",
   primaryFactor: "",
-  voucherStatus: "",
   hasRecentTests: "",
   testsList: "",
   previousClinics: "",
   urgencyLevel: "",
+  budgetRange: "",
+  voucherStatus: "",
   availabilityWindows: "",
   bestContactMethod: "",
+  message: "",
+  gdprConsent: false,
   consentToShare: false,
 };
 
@@ -74,6 +65,25 @@ function isValidPhone(raw: string): boolean {
   if (!/^(\+?40|0)/.test(stripped)) return false;
   const digits = stripped.replace(/\D/g, "");
   return digits.length >= 10 && digits.length <= 13;
+}
+
+function deriveAgeRange(age: number): string {
+  if (age < 30) return "under-30";
+  if (age <= 34) return "30-34";
+  if (age <= 37) return "35-37";
+  if (age <= 40) return "38-40";
+  return "41+";
+}
+
+function deriveTimeline(urgency: string): string {
+  const map: Record<string, string> = {
+    ASAP_0_30: "asap",
+    SOON_1_3: "1-3months",
+    MID_3_6: "1-3months",
+    LATER_6_12: "researching",
+    INFO_ONLY: "researching",
+  };
+  return map[urgency] || "researching";
 }
 
 const inputClasses =
@@ -104,34 +114,6 @@ export default function LeadForm() {
     }
   }, []);
 
-  const ageRanges = [
-    { value: "under-30", label: t("ageUnder30") },
-    { value: "30-34", label: t("age3034") },
-    { value: "35-37", label: t("age3537") },
-    { value: "38-40", label: t("age3840") },
-    { value: "41+", label: t("age41plus") },
-  ];
-
-  const timelines = [
-    { value: "asap", label: t("timelineAsap") },
-    { value: "1-3months", label: t("timeline1to3") },
-    { value: "researching", label: t("timelineResearching") },
-  ];
-
-  const budgetRanges = [
-    { value: "under-10k", label: t("budgetUnder10k") },
-    { value: "10k-20k", label: t("budget10kTo20k") },
-    { value: "over-20k", label: t("budgetOver20k") },
-    { value: "prefer-discuss", label: t("budgetPreferDiscuss") },
-  ];
-
-  const testStatuses = [
-    { value: "ready", label: t("testStatusReady") },
-    { value: "pending", label: t("testStatusPending") },
-    { value: "not-started", label: t("testStatusNotStarted") },
-    { value: "unknown", label: t("testStatusUnknown") },
-  ];
-
   const primaryFactors = [
     { value: "UNKNOWN", label: t("primaryFactorUnknown") },
     { value: "MALE_FACTOR", label: t("primaryFactorMale") },
@@ -145,20 +127,27 @@ export default function LeadForm() {
     { value: "OTHER", label: t("primaryFactorOther") },
   ];
 
-  const voucherStatuses = [
-    { value: "NONE", label: t("voucherStatusNone") },
-    { value: "APPLIED", label: t("voucherStatusApplied") },
-    { value: "APPROVED_ASSMB", label: t("voucherStatusApprovedAssmb") },
-    { value: "APPROVED_NATIONAL", label: t("voucherStatusApprovedNational") },
-    { value: "APPROVED_OTHER", label: t("voucherStatusApprovedOther") },
-  ];
-
   const urgencyLevels = [
     { value: "ASAP_0_30", label: t("urgencyAsap") },
     { value: "SOON_1_3", label: t("urgencySoon") },
     { value: "MID_3_6", label: t("urgencyMid") },
     { value: "LATER_6_12", label: t("urgencyLater") },
     { value: "INFO_ONLY", label: t("urgencyInfo") },
+  ];
+
+  const budgetRanges = [
+    { value: "under-10k", label: t("budgetUnder10k") },
+    { value: "10k-20k", label: t("budget10kTo20k") },
+    { value: "over-20k", label: t("budgetOver20k") },
+    { value: "prefer-discuss", label: t("budgetPreferDiscuss") },
+  ];
+
+  const voucherStatuses = [
+    { value: "NONE", label: t("voucherStatusNone") },
+    { value: "APPLIED", label: t("voucherStatusApplied") },
+    { value: "APPROVED_ASSMB", label: t("voucherStatusApprovedAssmb") },
+    { value: "APPROVED_NATIONAL", label: t("voucherStatusApprovedNational") },
+    { value: "APPROVED_OTHER", label: t("voucherStatusApprovedOther") },
   ];
 
   const bestContactMethods = [
@@ -185,12 +174,17 @@ export default function LeadForm() {
       newErrors.email = t("errorEmailInvalid");
     }
 
-    if (!formData.ageRange) newErrors.ageRange = t("errorAgeRange");
-    if (!formData.triedIVF) newErrors.triedIVF = t("errorTriedIVF");
-    if (!formData.timeline) newErrors.timeline = t("errorTimeline");
-    if (!formData.budgetRange) newErrors.budgetRange = t("errorBudgetRange");
-    if (!formData.urgencyLevel) newErrors.urgencyLevel = t("errorTimeline"); // Reuse timeline error
+    const femAge = parseInt(formData.femaleAgeExact, 10);
+    if (!formData.femaleAgeExact.trim()) {
+      newErrors.femaleAgeExact = t("errorFemaleAgeExact");
+    } else if (isNaN(femAge) || femAge < 18 || femAge > 50) {
+      newErrors.femaleAgeExact = t("errorFemaleAgeExactInvalid");
+    }
+
     if (!formData.city.trim()) newErrors.city = t("errorCity");
+    if (!formData.triedIVF) newErrors.triedIVF = t("errorTriedIVF");
+    if (!formData.urgencyLevel) newErrors.urgencyLevel = t("errorUrgencyLevel");
+    if (!formData.budgetRange) newErrors.budgetRange = t("errorBudgetRange");
     if (!formData.gdprConsent) newErrors.gdprConsent = t("errorGdpr");
     if (!formData.consentToShare) newErrors.consentToShare = t("consentToShareRequired");
 
@@ -211,6 +205,11 @@ export default function LeadForm() {
     trackFormSubmit();
     setSubmitting(true);
 
+    const femAge = parseInt(formData.femaleAgeExact, 10);
+    const ageRange = deriveAgeRange(femAge);
+    const timeline = deriveTimeline(formData.urgencyLevel);
+    const testStatus = formData.hasRecentTests === "yes" ? "ready" : formData.hasRecentTests === "no" ? "not-started" : "unknown";
+
     try {
       const response = await fetch("/api/leads", {
         method: "POST",
@@ -220,24 +219,23 @@ export default function LeadForm() {
           last_name: formData.lastName.trim(),
           phone: formData.phone.trim(),
           email: formData.email.trim(),
-          age_range: formData.ageRange,
-          exact_age: formData.exactAge ? parseInt(formData.exactAge, 10) : undefined,
+          age_range: ageRange,
+          exact_age: femAge,
           tried_ivf: formData.triedIVF,
-          timeline: formData.timeline,
+          timeline,
           budget_range: formData.budgetRange,
-          test_status: formData.testStatus || undefined,
+          test_status: testStatus,
           city: formData.city.trim(),
           message: formData.message.trim() || undefined,
           gdpr_consent: formData.gdprConsent,
-          // Phase 2 fields
-          female_age_exact: formData.femaleAgeExact ? parseInt(formData.femaleAgeExact, 10) : undefined,
+          female_age_exact: femAge,
           male_age_exact: formData.maleAgeExact ? parseInt(formData.maleAgeExact, 10) : undefined,
           primary_factor: formData.primaryFactor || undefined,
           voucher_status: formData.voucherStatus || undefined,
           has_recent_tests: formData.hasRecentTests ? formData.hasRecentTests === "yes" : undefined,
           tests_list: formData.testsList?.trim() || undefined,
           previous_clinics: formData.previousClinics?.trim() || undefined,
-          urgency_level: formData.urgencyLevel || (formData.timeline === "asap" ? "ASAP_0_30" : formData.timeline === "1-3months" ? "SOON_1_3" : "INFO_ONLY"),
+          urgency_level: formData.urgencyLevel,
           availability_windows: formData.availabilityWindows?.trim() || undefined,
           best_contact_method: formData.bestContactMethod || undefined,
           consent_to_share: formData.consentToShare,
@@ -257,12 +255,13 @@ export default function LeadForm() {
             last_name: "lastName",
             phone: "phone",
             email: "email",
-            age_range: "ageRange",
+            female_age_exact: "femaleAgeExact",
             tried_ivf: "triedIVF",
-            timeline: "timeline",
+            urgency_level: "urgencyLevel",
             budget_range: "budgetRange",
             city: "city",
             gdpr_consent: "gdprConsent",
+            consent_to_share: "consentToShare",
           };
           for (const [key, msg] of Object.entries(result.fields)) {
             const formKey = fieldMap[key];
@@ -283,8 +282,8 @@ export default function LeadForm() {
       });
 
       trackGenerateLead({
-        timeline: formData.timeline,
-        age_range: formData.ageRange,
+        timeline,
+        age_range: ageRange,
         tried_ivf: formData.triedIVF,
         city: formData.city.trim(),
       });
@@ -335,7 +334,7 @@ export default function LeadForm() {
     );
   }
 
-  const showTimelineNudge = formData.timeline === "researching";
+  const showUrgencyNudge = formData.urgencyLevel === "INFO_ONLY" || formData.urgencyLevel === "LATER_6_12";
 
   return (
     <section id="lead-form" className="bg-white">
@@ -368,7 +367,7 @@ export default function LeadForm() {
               <input ref={honeypotRef} type="text" id="_company" name="_company" tabIndex={-1} autoComplete="off" />
             </div>
 
-            {/* 1. Name */}
+            {/* ── Personal info ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
                 <label htmlFor="firstName" className={labelClasses}>
@@ -406,7 +405,6 @@ export default function LeadForm() {
               </div>
             </div>
 
-            {/* 2. Phone */}
             <div className="mb-4">
               <label htmlFor="phone" className={labelClasses}>
                 {t("phone")} <span className="text-red-400">*</span>
@@ -429,7 +427,6 @@ export default function LeadForm() {
               )}
             </div>
 
-            {/* 3. Email */}
             <div className="mb-4">
               <label htmlFor="email" className={labelClasses}>
                 {t("email")} <span className="text-red-400">*</span>
@@ -448,164 +445,10 @@ export default function LeadForm() {
               {errors.email && <p id="err-email" role="alert" className="mt-1 text-sm text-red-500">{errors.email}</p>}
             </div>
 
-            {/* 4. Age */}
-            <div className="mb-4">
-              <FormSelect
-                id="ageRange"
-                label={t("ageRange")}
-                placeholder={t("ageRangePlaceholder")}
-                options={ageRanges}
-                value={formData.ageRange}
-                onChange={(v) => updateField("ageRange", v)}
-                disabled={submitting}
-                error={errors.ageRange}
-                errorId="err-ageRange"
-                required
-              />
-            </div>
-
-            {/* 5. Tried IVF */}
-            <div className="mb-4">
-              <fieldset>
-                <legend className={labelClasses}>
-                  {t("triedIVF")} <span className="text-red-400">*</span>
-                </legend>
-                <div className="grid grid-cols-3 gap-2 mt-1" role="group" aria-label={t("triedIVF")}>
-                  {[
-                    { value: "Yes", label: t("triedYes") },
-                    { value: "No", label: t("triedNo") },
-                    { value: "InProgress", label: t("triedInProgress") },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => updateField("triedIVF", opt.value)}
-                      disabled={submitting}
-                      aria-pressed={formData.triedIVF === opt.value}
-                      className={`py-3 px-3 rounded-xl border text-sm font-medium transition-all duration-200 disabled:opacity-60 active:scale-[0.98] ${
-                        formData.triedIVF === opt.value
-                          ? "border-primary-500 bg-primary-50 text-primary-700"
-                          : "border-medical-border bg-white text-medical-text hover:border-primary-200"
-                      } ${errors.triedIVF ? "border-red-300" : ""}`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-              {errors.triedIVF && <p role="alert" className="mt-1 text-sm text-red-500">{errors.triedIVF}</p>}
-            </div>
-
-            {/* 6. Timeline */}
-            <div className="mb-4">
-              <fieldset>
-                <legend className={labelClasses}>
-                  {t("timeline")} <span className="text-red-400">*</span>
-                </legend>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1" role="group" aria-label={t("timeline")}>
-                  {timelines.map((tl) => (
-                    <button
-                      key={tl.value}
-                      type="button"
-                      onClick={() => updateField("timeline", tl.value)}
-                      disabled={submitting}
-                      aria-pressed={formData.timeline === tl.value}
-                      className={`py-3 px-3 rounded-xl border text-sm font-medium transition-all duration-200 disabled:opacity-60 active:scale-[0.98] ${
-                        formData.timeline === tl.value
-                          ? "border-primary-500 bg-primary-50 text-primary-700"
-                          : "border-medical-border bg-white text-medical-text hover:border-primary-200"
-                      } ${errors.timeline ? "border-red-300" : ""}`}
-                    >
-                      {tl.label}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-              {errors.timeline && <p role="alert" className="mt-1 text-sm text-red-500">{errors.timeline}</p>}
-              {showTimelineNudge && (
-                <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                  {t("timelineNudge")}
-                </p>
-              )}
-            </div>
-
-            {/* 7. Financing Method */}
-            <div className="mb-4">
-              <FormSelect
-                id="budgetRange"
-                label={t("budgetRange")}
-                placeholder={t("budgetRangePlaceholder")}
-                options={budgetRanges}
-                value={formData.budgetRange}
-                onChange={(v) => updateField("budgetRange", v)}
-                disabled={submitting}
-                error={errors.budgetRange}
-                errorId="err-budgetRange"
-                required
-              />
-            </div>
-
-            {/* 7b. Exact Age (optional) */}
-            <div className="mb-4">
-              <label htmlFor="exactAge" className={labelClasses}>
-                {t("exactAge")}
-              </label>
-              <input
-                type="number"
-                id="exactAge"
-                min="18"
-                max="50"
-                value={formData.exactAge}
-                onChange={(e) => updateField("exactAge", e.target.value)}
-                placeholder={t("exactAgePlaceholder")}
-                className={inputClasses}
-                disabled={submitting}
-              />
-              {t("exactAgeHelper") && (
-                <p className="mt-1 text-xs text-medical-muted">
-                  {t("exactAgeHelper")}
-                </p>
-              )}
-            </div>
-
-            {/* 7c. Test Status (optional) */}
-            <div className="mb-4">
-              <FormSelect
-                id="testStatus"
-                label={t("testStatus")}
-                placeholder={t("testStatusPlaceholder")}
-                options={testStatuses}
-                value={formData.testStatus}
-                onChange={(v) => updateField("testStatus", v)}
-                disabled={submitting}
-              />
-            </div>
-
-            {/* Phase 2: Medical Qualifiers Section */}
-            <div className="mb-6 mt-6 pt-6 border-t border-medical-border">
-              <h3 className="text-base font-semibold text-medical-heading mb-1">{t("medicalQualifiersTitle")}</h3>
-              <p className="text-sm text-medical-muted mb-4">{t("medicalQualifiersSubtitle")}</p>
-
-              {/* Urgency Level (required) */}
-              <div className="mb-4">
-                <FormSelect
-                  id="urgencyLevel"
-                  label={t("urgencyLevel")}
-                  placeholder={t("urgencyLevelPlaceholder")}
-                  options={urgencyLevels}
-                  value={formData.urgencyLevel}
-                  onChange={(v) => updateField("urgencyLevel", v)}
-                  disabled={submitting}
-                  error={errors.urgencyLevel}
-                  errorId="err-urgencyLevel"
-                  required
-                />
-              </div>
-
-              {/* Female Age Exact */}
-              <div className="mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
                 <label htmlFor="femaleAgeExact" className={labelClasses}>
-                  {t("femaleAgeExact")}
+                  {t("femaleAgeExact")} <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="number"
@@ -615,13 +458,14 @@ export default function LeadForm() {
                   value={formData.femaleAgeExact}
                   onChange={(e) => updateField("femaleAgeExact", e.target.value)}
                   placeholder={t("femaleAgeExactPlaceholder")}
-                  className={inputClasses}
                   disabled={submitting}
+                  aria-invalid={!!errors.femaleAgeExact}
+                  aria-describedby={errors.femaleAgeExact ? "err-femaleAgeExact" : undefined}
+                  className={`${inputClasses} ${errors.femaleAgeExact ? "border-red-300" : ""} disabled:opacity-60`}
                 />
+                {errors.femaleAgeExact && <p id="err-femaleAgeExact" role="alert" className="mt-1 text-sm text-red-500">{errors.femaleAgeExact}</p>}
               </div>
-
-              {/* Male Age Exact */}
-              <div className="mb-4">
+              <div>
                 <label htmlFor="maleAgeExact" className={labelClasses}>
                   {t("maleAgeExact")}
                 </label>
@@ -637,8 +481,62 @@ export default function LeadForm() {
                   disabled={submitting}
                 />
               </div>
+            </div>
 
-              {/* Primary Factor */}
+            <div className="mb-4">
+              <label htmlFor="city" className={labelClasses}>
+                {t("city")} <span className="text-red-400">*</span>
+              </label>
+              <input
+                id="city"
+                type="text"
+                placeholder={t("cityPlaceholder")}
+                value={formData.city}
+                onChange={(e) => updateField("city", e.target.value)}
+                disabled={submitting}
+                aria-invalid={!!errors.city}
+                aria-describedby={errors.city ? "err-city" : undefined}
+                className={`${inputClasses} ${errors.city ? "border-red-300" : ""} disabled:opacity-60`}
+              />
+              {errors.city && <p id="err-city" role="alert" className="mt-1 text-sm text-red-500">{errors.city}</p>}
+            </div>
+
+            {/* ── Medical situation ── */}
+            <div className="mb-6 mt-6 pt-6 border-t border-medical-border">
+              <h3 className="text-base font-semibold text-medical-heading mb-1">{t("medicalSectionTitle")}</h3>
+              <p className="text-sm text-medical-muted mb-4">{t("medicalSectionSubtitle")}</p>
+
+              <div className="mb-4">
+                <fieldset>
+                  <legend className={labelClasses}>
+                    {t("triedIVF")} <span className="text-red-400">*</span>
+                  </legend>
+                  <div className="grid grid-cols-3 gap-2 mt-1" role="group" aria-label={t("triedIVF")}>
+                    {[
+                      { value: "Yes", label: t("triedYes") },
+                      { value: "No", label: t("triedNo") },
+                      { value: "InProgress", label: t("triedInProgress") },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => updateField("triedIVF", opt.value)}
+                        disabled={submitting}
+                        aria-pressed={formData.triedIVF === opt.value}
+                        className={`py-3 px-3 rounded-xl border text-sm font-medium transition-all duration-200 disabled:opacity-60 active:scale-[0.98] ${
+                          formData.triedIVF === opt.value
+                            ? "border-primary-500 bg-primary-50 text-primary-700"
+                            : "border-medical-border bg-white text-medical-text hover:border-primary-200"
+                        } ${errors.triedIVF ? "border-red-300" : ""}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                {errors.triedIVF && <p role="alert" className="mt-1 text-sm text-red-500">{errors.triedIVF}</p>}
+              </div>
+
               <div className="mb-4">
                 <FormSelect
                   id="primaryFactor"
@@ -651,20 +549,6 @@ export default function LeadForm() {
                 />
               </div>
 
-              {/* Voucher Status */}
-              <div className="mb-4">
-                <FormSelect
-                  id="voucherStatus"
-                  label={t("voucherStatus")}
-                  placeholder={t("voucherStatusPlaceholder")}
-                  options={voucherStatuses}
-                  value={formData.voucherStatus}
-                  onChange={(v) => updateField("voucherStatus", v)}
-                  disabled={submitting}
-                />
-              </div>
-
-              {/* Has Recent Tests */}
               <div className="mb-4">
                 <label className={labelClasses}>{t("hasRecentTests")}</label>
                 <div className="flex gap-3 mt-1">
@@ -695,7 +579,6 @@ export default function LeadForm() {
                 </div>
               </div>
 
-              {/* Tests List (conditional) */}
               {formData.hasRecentTests === "yes" && (
                 <div className="mb-4">
                   <label htmlFor="testsList" className={labelClasses}>
@@ -713,7 +596,6 @@ export default function LeadForm() {
                 </div>
               )}
 
-              {/* Previous Clinics */}
               <div className="mb-4">
                 <label htmlFor="previousClinics" className={labelClasses}>
                   {t("previousClinics")}
@@ -728,8 +610,65 @@ export default function LeadForm() {
                   disabled={submitting}
                 />
               </div>
+            </div>
 
-              {/* Availability Windows */}
+            {/* ── Planning ── */}
+            <div className="mb-6 pt-6 border-t border-medical-border">
+              <h3 className="text-base font-semibold text-medical-heading mb-1">{t("planningSectionTitle")}</h3>
+              <p className="text-sm text-medical-muted mb-4">{t("planningSectionSubtitle")}</p>
+
+              <div className="mb-4">
+                <FormSelect
+                  id="urgencyLevel"
+                  label={t("urgencyLevel")}
+                  placeholder={t("urgencyLevelPlaceholder")}
+                  options={urgencyLevels}
+                  value={formData.urgencyLevel}
+                  onChange={(v) => updateField("urgencyLevel", v)}
+                  disabled={submitting}
+                  error={errors.urgencyLevel}
+                  errorId="err-urgencyLevel"
+                  required
+                />
+                {showUrgencyNudge && (
+                  <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                    {t("urgencyNudge")}
+                  </p>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <FormSelect
+                  id="budgetRange"
+                  label={t("budgetRange")}
+                  placeholder={t("budgetRangePlaceholder")}
+                  options={budgetRanges}
+                  value={formData.budgetRange}
+                  onChange={(v) => updateField("budgetRange", v)}
+                  disabled={submitting}
+                  error={errors.budgetRange}
+                  errorId="err-budgetRange"
+                  required
+                />
+              </div>
+
+              <div className="mb-4">
+                <FormSelect
+                  id="voucherStatus"
+                  label={t("voucherStatus")}
+                  placeholder={t("voucherStatusPlaceholder")}
+                  options={voucherStatuses}
+                  value={formData.voucherStatus}
+                  onChange={(v) => updateField("voucherStatus", v)}
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+
+            {/* ── Contact preferences ── */}
+            <div className="mb-6 pt-6 border-t border-medical-border">
+              <h3 className="text-base font-semibold text-medical-heading mb-4">{t("preferencesSectionTitle")}</h3>
+
               <div className="mb-4">
                 <label htmlFor="availabilityWindows" className={labelClasses}>
                   {t("availabilityWindows")}
@@ -745,7 +684,6 @@ export default function LeadForm() {
                 />
               </div>
 
-              {/* Best Contact Method */}
               <div className="mb-4">
                 <FormSelect
                   id="bestContactMethod"
@@ -757,44 +695,24 @@ export default function LeadForm() {
                   disabled={submitting}
                 />
               </div>
+
+              <div className="mb-5">
+                <label htmlFor="message" className={labelClasses}>
+                  {t("message")} <span className="text-medical-muted">{t("messageOptional")}</span>
+                </label>
+                <textarea
+                  id="message"
+                  rows={3}
+                  placeholder={t("messagePlaceholder")}
+                  value={formData.message}
+                  onChange={(e) => updateField("message", e.target.value)}
+                  disabled={submitting}
+                  className={`${inputClasses} resize-none disabled:opacity-60`}
+                />
+              </div>
             </div>
 
-            {/* 8. City */}
-            <div className="mb-4">
-              <label htmlFor="city" className={labelClasses}>
-                {t("city")} <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="city"
-                type="text"
-                placeholder={t("cityPlaceholder")}
-                value={formData.city}
-                onChange={(e) => updateField("city", e.target.value)}
-                disabled={submitting}
-                aria-invalid={!!errors.city}
-                aria-describedby={errors.city ? "err-city" : undefined}
-                className={`${inputClasses} ${errors.city ? "border-red-300" : ""} disabled:opacity-60`}
-              />
-              {errors.city && <p id="err-city" role="alert" className="mt-1 text-sm text-red-500">{errors.city}</p>}
-            </div>
-
-            {/* 9. Message */}
-            <div className="mb-5">
-              <label htmlFor="message" className={labelClasses}>
-                {t("message")} <span className="text-medical-muted">{t("messageOptional")}</span>
-              </label>
-              <textarea
-                id="message"
-                rows={3}
-                placeholder={t("messagePlaceholder")}
-                value={formData.message}
-                onChange={(e) => updateField("message", e.target.value)}
-                disabled={submitting}
-                className={`${inputClasses} resize-none disabled:opacity-60`}
-              />
-            </div>
-
-            {/* GDPR */}
+            {/* ── Consent ── */}
             <div className="mb-6">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
@@ -818,7 +736,6 @@ export default function LeadForm() {
               {errors.gdprConsent && <p id="err-gdpr" role="alert" className="mt-1 text-sm text-red-500 ml-8">{errors.gdprConsent}</p>}
             </div>
 
-            {/* Consent to Share - Explicit GDPR Consent */}
             <div className="mb-6">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
