@@ -52,6 +52,7 @@ export default function GoogleAnalytics() {
                 page_path: window.location.pathname,
                 send_page_view: true
               });
+              gtag('config', 'AW-17961772126');
               ${process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ? `gtag('config', '${process.env.NEXT_PUBLIC_GOOGLE_ADS_ID}');` : ""}
             `}
           </Script>

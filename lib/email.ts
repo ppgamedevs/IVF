@@ -213,19 +213,29 @@ export function buildUserHtml(
     },
   );
 
+  const ageVal = lead.female_age_exact ?? lead.exact_age;
   const dataRows = [
     row(clinicLabel("name", locale), `${lead.first_name} ${lead.last_name}`),
     row(clinicLabel("email", locale), lead.email),
     row(clinicLabel("phone", locale), lead.phone),
-    lead.exact_age 
-      ? row(locale === "ro" ? "Vârsta exactă" : "Exact age", `${lead.exact_age} ${locale === "ro" ? "ani" : "years"}`)
+    ageVal != null
+      ? row(locale === "ro" ? "Vârsta (femeie)" : "Age (female)", `${ageVal} ${locale === "ro" ? "ani" : "years"}`)
       : row(clinicLabel("ageRange", locale), ageRangeDisplay(lead.age_range, locale)),
+    lead.male_age_exact != null ? row(locale === "ro" ? "Vârsta partener" : "Partner age", `${lead.male_age_exact} ${locale === "ro" ? "ani" : "years"}`) : "",
     row(clinicLabel("triedIvf", locale), clinicYesNo(lead.tried_ivf, locale)),
+    lead.primary_factor ? row(locale === "ro" ? "Cauză principală" : "Primary factor", primaryFactorDisplay(lead.primary_factor, locale)) : "",
+    lead.urgency_level ? row(locale === "ro" ? "Termen dorit" : "Desired timeframe", urgencyDisplay(lead.urgency_level, locale)) : "",
     row(clinicLabel("timeline", locale), clinicTimeline(lead.timeline, locale)),
     row(locale === "ro" ? "Mod de finanțare" : "Financing method", clinicBudget(lead.budget_range, locale)),
+    lead.voucher_status ? row(locale === "ro" ? "Voucher" : "Voucher", voucherDisplay(lead.voucher_status, locale)) : "",
     lead.test_status 
       ? row(locale === "ro" ? "Status analize medicale" : "Medical test status", testStatusDisplay(lead.test_status, locale))
       : "",
+    lead.has_recent_tests != null ? row(locale === "ro" ? "Analize recente" : "Recent tests", lead.has_recent_tests ? (locale === "ro" ? "Da" : "Yes") : (locale === "ro" ? "Nu" : "No")) : "",
+    lead.tests_list ? row(locale === "ro" ? "Lista analize" : "Tests list", lead.tests_list) : "",
+    lead.previous_clinics ? row(locale === "ro" ? "Clinici consultate anterior" : "Previously consulted clinics", lead.previous_clinics) : "",
+    lead.best_contact_method ? row(locale === "ro" ? "Preferință contact" : "Contact preference", contactMethodDisplay(lead.best_contact_method, locale)) : "",
+    lead.availability_windows ? row(locale === "ro" ? "Disponibilitate" : "Availability", lead.availability_windows) : "",
     row(clinicLabel("city", locale), lead.city),
     row(
       clinicLabel("message", locale),
@@ -247,7 +257,7 @@ export function buildUserHtml(
 
       <div style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);padding:32px;text-align:center;">
         <h1 style="margin:0;color:#ffffff !important;font-size:22px;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,0.1);">${s.heading}</h1>
-        <p style="margin:10px 0 0;color:#ffffff !important;font-size:14px;opacity:0.95;">${locale === "ro" ? "Vei fi contactat de clinicile potrivite in maximum 24 de ore." : "You will be contacted by a suitable clinic within 24 hours."}</p>
+        <p style="margin:10px 0 0;color:#ffffff !important;font-size:14px;opacity:0.95;">${locale === "ro" ? "Vei fi contactat de clinicile potrivite in maximum 72 de ore." : "You will be contacted by a suitable clinic within 72 hours."}</p>
       </div>
 
       <div style="padding:32px;">
@@ -343,15 +353,24 @@ function buildInternalHtml(
           ${row(clinicLabel("name", locale), `${lead.first_name} ${lead.last_name}`)}
           ${row(clinicLabel("email", locale), `<a href="mailto:${escapeHtml(lead.email)}" style="color:#2563eb;text-decoration:none;">${escapeHtml(lead.email)}</a>`, true)}
           ${row(clinicLabel("phone", locale), `<a href="tel:${escapeHtml(lead.phone)}" style="color:#2563eb;text-decoration:none;">${escapeHtml(lead.phone)}</a>`, true)}
-          ${lead.exact_age 
-            ? row(locale === "ro" ? "Vârsta exactă" : "Exact age", `${lead.exact_age} ${locale === "ro" ? "ani" : "years"}`, true)
+          ${(lead.female_age_exact ?? lead.exact_age) != null
+            ? row(locale === "ro" ? "Vârsta (femeie)" : "Age (female)", `${lead.female_age_exact ?? lead.exact_age} ${locale === "ro" ? "ani" : "years"}`, true)
             : row(clinicLabel("ageRange", locale), ageRangeDisplay(lead.age_range, locale))}
+          ${lead.male_age_exact != null ? row(locale === "ro" ? "Vârsta partener" : "Partner age", `${lead.male_age_exact} ${locale === "ro" ? "ani" : "years"}`, true) : ""}
           ${row(clinicLabel("triedIvf", locale), clinicYesNo(lead.tried_ivf, locale))}
+          ${lead.primary_factor ? row(locale === "ro" ? "Cauză principală" : "Primary factor", primaryFactorDisplay(lead.primary_factor, locale)) : ""}
+          ${lead.urgency_level ? row(locale === "ro" ? "Termen dorit" : "Desired timeframe", urgencyDisplay(lead.urgency_level, locale)) : ""}
           ${row(clinicLabel("timeline", locale), clinicTimeline(lead.timeline, locale))}
           ${row(locale === "ro" ? "Mod de finanțare" : "Financing method", clinicBudget(lead.budget_range, locale))}
+          ${lead.voucher_status ? row(locale === "ro" ? "Voucher" : "Voucher", voucherDisplay(lead.voucher_status, locale)) : ""}
           ${lead.test_status 
             ? row(locale === "ro" ? "Status analize" : "Test status", testStatusDisplay(lead.test_status, locale))
             : ""}
+          ${lead.has_recent_tests != null ? row(locale === "ro" ? "Analize recente" : "Recent tests", lead.has_recent_tests ? (locale === "ro" ? "Da" : "Yes") : (locale === "ro" ? "Nu" : "No")) : ""}
+          ${lead.tests_list ? row(locale === "ro" ? "Lista analize" : "Tests list", lead.tests_list) : ""}
+          ${lead.previous_clinics ? row(locale === "ro" ? "Clinici consultate anterior" : "Previously consulted clinics", lead.previous_clinics) : ""}
+          ${lead.best_contact_method ? row(locale === "ro" ? "Preferință contact" : "Contact preference", contactMethodDisplay(lead.best_contact_method, locale)) : ""}
+          ${lead.availability_windows ? row(locale === "ro" ? "Disponibilitate" : "Availability", lead.availability_windows) : ""}
           ${lead.phone_verified_at 
             ? row(locale === "ro" ? "Confirmare telefonică" : "Phone verified", locale === "ro" 
               ? `✓ Confirmat la ${new Date(lead.phone_verified_at).toLocaleString("ro-RO", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Bucharest" })}`
