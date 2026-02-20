@@ -136,18 +136,83 @@ export function apiMessage(key: string, locale: SupportedLocale): string {
 
 export type IntentLevel = "high" | "medium" | "low";
 
+/** Input for intent derivation. urgency_level is primary; timeline + budget used as fallback. */
+export interface IntentInput {
+  /** Primary: ASAP_0_30 | SOON_1_3 | MID_3_6 | LATER_6_12 | INFO_ONLY */
+  urgency_level?: string | null;
+  /** Fallback / legacy: asap | 1-3months | researching */
+  timeline?: string;
+  budget_range?: string;
+  has_recent_tests?: boolean | null;
+  /** APPROVED_* = voucher approved (boosts intent) */
+  voucher_status?: string | null;
+}
+
+const URGENCY_HIGH = ["ASAP_0_30", "SOON_1_3"];
+const URGENCY_MEDIUM = ["MID_3_6"];
+const URGENCY_LOW = ["LATER_6_12", "INFO_ONLY"];
+const BUDGET_KNOWN = ["under-10k", "10k-20k", "over-20k"];
+const VOUCHER_APPROVED = ["APPROVED_ASSMB", "APPROVED_NATIONAL", "APPROVED_OTHER"];
+
+function isBudgetKnown(budgetRange?: string | null): boolean {
+  return !!budgetRange && BUDGET_KNOWN.includes(budgetRange);
+}
+
 /**
- * Derive lead intent from timeline + budget.
- *   High:   (asap or 1-3months) AND budget != prefer-discuss
- *   Medium: (asap or 1-3months) AND budget == prefer-discuss
- *   Low:    researching (any budget)
+ * Derive lead intent from form fields (urgency, budget, tests, voucher).
+ *   High:   ASAP or 1–3 months + budget known; optional boost from recent tests / voucher approved.
+ *   Medium: ASAP/1–3mo with prefer-discuss, or 3–6 months, or 6–12 months with budget known.
+ *   Low:    INFO_ONLY, or 6–12 months without budget, or researching.
  */
-export function deriveIntentLevel(timeline: string, budgetRange?: string): IntentLevel {
-  if (timeline === "researching") return "low";
+export function deriveIntentLevel(
+  input: IntentInput | string,
+  budgetRange?: string
+): IntentLevel {
+  // Legacy signature: deriveIntentLevel(timeline, budgetRange)
+  if (typeof input === "string") {
+    const timeline = input;
+    const budget = budgetRange;
+    if (timeline === "researching") return "low";
+    if (timeline === "asap" || timeline === "1-3months") {
+      if (budget === "prefer-discuss") return "medium";
+      return "high";
+    }
+    return "low";
+  }
+
+  const { urgency_level, timeline, budget_range, has_recent_tests, voucher_status } = input;
+
+  const budgetKnown = isBudgetKnown(budget_range);
+  const voucherApproved = !!voucher_status && VOUCHER_APPROVED.includes(voucher_status);
+
+  // 1) Info-only or researching → low
+  if (urgency_level === "INFO_ONLY") return "low";
+  if (timeline === "researching" && !urgency_level) return "low";
+
+  // 2) Later 6–12 months: medium if budget known, else low
+  if (urgency_level === "LATER_6_12") {
+    return budgetKnown ? "medium" : "low";
+  }
+
+  // 3) Mid 3–6 months → medium (optional: high if budget known + tests/voucher)
+  if (urgency_level === "MID_3_6") {
+    if (budgetKnown && (has_recent_tests || voucherApproved)) return "high";
+    return "medium";
+  }
+
+  // 4) ASAP or 1–3 months
+  if (URGENCY_HIGH.includes(urgency_level ?? "")) {
+    if (budgetKnown) return "high";
+    if (budget_range === "prefer-discuss") return "medium";
+    return "high"; // ASAP/SOON without budget still high intent
+  }
+
+  // Fallback: use timeline if no urgency_level
   if (timeline === "asap" || timeline === "1-3months") {
-    if (budgetRange === "prefer-discuss") return "medium";
+    if (budget_range === "prefer-discuss") return "medium";
     return "high";
   }
+
   return "low";
 }
 

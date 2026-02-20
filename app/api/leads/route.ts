@@ -134,7 +134,13 @@ export async function POST(request: NextRequest) {
 
     // --- All checks passed - derive intent and insert lead ---
     const now = new Date().toISOString();
-    const intentLevel = deriveIntentLevel(lead.timeline, lead.budget_range);
+    const intentLevel = deriveIntentLevel({
+      urgency_level: lead.urgency_level ?? undefined,
+      timeline: lead.timeline,
+      budget_range: lead.budget_range,
+      has_recent_tests: lead.has_recent_tests ?? undefined,
+      voucher_status: lead.voucher_status ?? undefined,
+    });
     const sql = getDb();
     
     // Capture consent metadata (explicit GDPR consent)
