@@ -149,8 +149,6 @@ export interface IntentInput {
 }
 
 const URGENCY_HIGH = ["ASAP_0_30", "SOON_1_3"];
-const URGENCY_MEDIUM = ["MID_3_6"];
-const URGENCY_LOW = ["LATER_6_12", "INFO_ONLY"];
 const BUDGET_KNOWN = ["under-10k", "10k-20k", "over-20k"];
 const VOUCHER_APPROVED = ["APPROVED_ASSMB", "APPROVED_NATIONAL", "APPROVED_OTHER"];
 
