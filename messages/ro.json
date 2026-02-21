@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "Clinici FIV Romania | Rapid și confidențial | FIV Match",
-    "description": "Trimite o solicitare gratuita si vei fi contactat de clinici private de FIV din Romania in maximum 72 de ore. Serviciu independent, date protejate GDPR.",
-    "keywords": "FIV, clinici FIV Romania, fertilitate, tratament FIV, clinici fertilitate, FIV Match, inseminare in vitro"
+    "title": "Clinici FIV Romania | Solicitare gratuită, rapid și confidențial | FIV Match",
+    "description": "Clinici FIV și fertilitate în Romania: trimite solicitarea ta gratuit și vei fi contactat de clinici private în maximum 72 de ore. Serviciu independent, date protejate GDPR.",
+    "keywords": "FIV, clinici FIV Romania, fertilitate, tratament FIV, clinici fertilitate, FIV Match, inseminare in vitro, solicitare FIV"
   },
   "header": {
     "brand": "FIV Match",
@@ -200,11 +200,15 @@
     "disclaimer": "FIV Match nu este o clinica medicala si nu ofera sfaturi, diagnostic sau tratament medical. Informatiile prezentate pe acest site au caracter exclusiv informativ. Consultati intotdeauna un medic specialist pentru decizii medicale.",
     "linksTitle": "Legal",
     "cta": "Trimite solicitarea",
+    "formLink": "Formular solicitare FIV",
     "privacy": "Politica de Confidentialitate",
     "terms": "Termeni si Conditii",
     "cookiePolicy": "Politica de Cookie-uri",
     "contactTitle": "Contact",
-    "contactEmail": "contact@fivmatch.ro",
+    "contactEmail": "leads@fivmatch.ro",
+    "contactEmailUser": "leads",
+    "contactEmailDomain": "fivmatch.ro",
+    "contactLink": "Scrie-ne",
     "copyright": "© {year} FIV Match. Toate drepturile rezervate."
   },
   "privacy": {
@@ -272,7 +276,7 @@
     "s10Title": "10. Modificari",
     "s10Text": "Ne rezervam dreptul de a modifica acesti termeni in orice moment. Modificarile intra in vigoare la data publicarii pe aceasta pagina.",
     "s11Title": "11. Contact",
-    "s11Text": "Pentru orice intrebari legate de acesti termeni: contact@fivmatch.ro"
+    "s11Text": "Pentru orice intrebari legate de acesti termeni: leads@fivmatch.ro"
   },
   "cookiePolicy": {
     "metaTitle": "Politica de Cookie-uri | FIV Match",

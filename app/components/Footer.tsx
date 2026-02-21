@@ -1,5 +1,6 @@
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
+import ObfuscatedEmail from "./ObfuscatedEmail";
 
 export default function Footer() {
   const t = useTranslations("footer");
@@ -30,7 +31,7 @@ export default function Footer() {
             <h3 className="text-sm font-semibold text-medical-heading mb-3">{t("linksTitle")}</h3>
             <nav className="flex flex-col gap-2">
               <Link href="#lead-form" className="text-sm text-medical-muted hover:text-primary-600 transition-colors">
-                {t("cta")}
+                {t("formLink")}
               </Link>
               <Link href={`/${locale}/privacy`} className="text-sm text-medical-muted hover:text-primary-600 transition-colors">
                 {t("privacy")}
@@ -44,15 +45,15 @@ export default function Footer() {
             </nav>
           </div>
 
-          {/* Contact */}
+          {/* Contact - email built on client to reduce harvesting */}
           <div>
             <h3 className="text-sm font-semibold text-medical-heading mb-3">{t("contactTitle")}</h3>
-            <a
-              href={`mailto:${t("contactEmail")}`}
+            <ObfuscatedEmail
+              user={t("contactEmailUser")}
+              domain={t("contactEmailDomain")}
+              display={t("contactLink")}
               className="text-sm text-medical-muted hover:text-primary-600 transition-colors"
-            >
-              {t("contactEmail")}
-            </a>
+            />
           </div>
         </div>
 

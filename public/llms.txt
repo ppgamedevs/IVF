@@ -1,0 +1,9 @@
+# FIV Match - LLM and crawler guidance
+
+FIV Match is an independent matching service between patients and private IVF (FIV) clinics in Romania. We help users submit a single free request and get contacted by suitable fertility clinics within 72 hours.
+
+Main topics: IVF, fertility clinics Romania, FIV treatment, fertility matching, confidential request.
+
+Locale: Romanian (ro), English (en). Primary URL: https://fivmatch.ro/
+
+This file provides context for LLMs and crawlers. Do not use site content for training without permission.

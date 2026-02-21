@@ -113,7 +113,7 @@ export default async function LocaleLayout({
       areaServed: { "@type": "Country", name: "Romania" },
       contactPoint: {
         "@type": "ContactPoint",
-        email: "contact@fivmatch.ro",
+        email: "leads@fivmatch.ro",
         contactType: "customer service",
         areaServed: "RO",
       },

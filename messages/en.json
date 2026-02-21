@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "IVF Clinics Romania | Fast & Confidential | FIV Match",
-    "description": "Submit a free request and private IVF clinics in Romania will contact you within 72 hours. Independent matching service, GDPR-protected data.",
-    "keywords": "IVF, IVF clinics Romania, fertility treatment, fertility clinics, FIV Match, in vitro fertilization"
+    "title": "IVF Clinics Romania | Free Request, Fast & Confidential | FIV Match",
+    "description": "IVF and fertility clinics in Romania: submit your free request and private clinics will contact you within 72 hours. Independent matching service, GDPR-protected data.",
+    "keywords": "IVF, IVF clinics Romania, fertility treatment, fertility clinics, FIV Match, in vitro fertilization, IVF request"
   },
   "header": {
     "brand": "FIV Match",
@@ -200,11 +200,15 @@
     "disclaimer": "FIV Match is not a medical clinic and does not provide medical advice, diagnosis, or treatment. The information on this site is for informational purposes only. Always consult a qualified medical professional for medical decisions.",
     "linksTitle": "Legal",
     "cta": "Submit your request",
+    "formLink": "IVF request form",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
     "cookiePolicy": "Cookie Policy",
     "contactTitle": "Contact",
-    "contactEmail": "contact@fivmatch.ro",
+    "contactEmail": "leads@fivmatch.ro",
+    "contactEmailUser": "leads",
+    "contactEmailDomain": "fivmatch.ro",
+    "contactLink": "Contact us",
     "copyright": "© {year} FIV Match. All rights reserved."
   },
   "privacy": {
@@ -272,7 +276,7 @@
     "s10Title": "10. Amendments",
     "s10Text": "We reserve the right to amend these terms at any time. Amendments take effect on the date of publication on this page.",
     "s11Title": "11. Contact",
-    "s11Text": "For any questions about these terms: contact@fivmatch.ro"
+    "s11Text": "For any questions about these terms: leads@fivmatch.ro"
   },
   "cookiePolicy": {
     "metaTitle": "Cookie Policy | FIV Match",

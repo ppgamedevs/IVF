@@ -1,0 +1,2 @@
+# FIV Match - no programmatic advertising on this site
+# Place authorized seller entries here if you add ad networks later.
