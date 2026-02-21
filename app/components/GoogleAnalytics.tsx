@@ -9,7 +9,7 @@ export default function GoogleAnalytics() {
       {/* Google Tag Manager - loads first if configured */}
       {GTM_ID && (
         <>
-          <Script id="gtm-init" strategy="lazyOnLoad">
+          <Script id="gtm-init" strategy="lazyOnload">
             {`
               (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
               new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -26,9 +26,9 @@ export default function GoogleAnalytics() {
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-            strategy="lazyOnLoad"
+            strategy="lazyOnload"
           />
-          <Script id="gtag-init" strategy="lazyOnLoad">
+          <Script id="gtag-init" strategy="lazyOnload">
             {`
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
