@@ -59,10 +59,12 @@ export async function POST(
     // Compute tier if verifying
     let tierUpdate: { lead_tier?: string; tier_reason?: string | null } = {};
     if (status === "VERIFIED_READY") {
+      // Treat null consent as true when operator verifies (form requires consent; old leads may have null)
+      const consentToShare = lead.consent_to_share !== false;
       const tieringResult = computeLeadTier({
         operator_status: status,
         urgency_level: lead.urgency_level,
-        consent_to_share: Boolean(lead.consent_to_share),
+        consent_to_share: consentToShare,
         female_age_exact: lead.female_age_exact,
         best_contact_method: lead.best_contact_method,
         availability_windows: lead.availability_windows,
