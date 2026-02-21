@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { resolveLeadId } from "@/lib/resolve-lead-id";
 
 /**
  * POST /api/admin/leads/[id]/verify?token=...
- * Marks lead as verified.
+ * Marks lead as verified. [id] can be full UUID or shortId.
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   const token = request.nextUrl.searchParams.get("token");
   const verifyToken = process.env.VERIFY_TOKEN;
@@ -18,6 +19,12 @@ export async function POST(
 
   try {
     const sql = getDb();
+    const resolved = await Promise.resolve(params);
+    const leadId = await resolveLeadId(sql, resolved.id ?? "");
+    if (!leadId) {
+      return NextResponse.json({ error: "Lead negăsit" }, { status: 404 });
+    }
+
     const now = new Date().toISOString();
 
     const result = await sql`
@@ -26,7 +33,7 @@ export async function POST(
         status = 'verified',
         verified_at = ${now},
         updated_at = ${now}
-      WHERE id = ${params.id}
+      WHERE id = ${leadId}
       RETURNING id, status, verified_at
     `;
 

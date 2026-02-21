@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { resolveLeadId } from "@/lib/resolve-lead-id";
 
 /**
  * POST /api/admin/leads/[id]/call?token=...
- * Logs a call attempt and increments call_attempts counter.
+ * Logs a call attempt and increments call_attempts counter. [id] can be full UUID or shortId.
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   const token = request.nextUrl.searchParams.get("token");
   const verifyToken = process.env.VERIFY_TOKEN;
@@ -18,6 +19,12 @@ export async function POST(
 
   try {
     const sql = getDb();
+    const resolved = await Promise.resolve(params);
+    const leadId = await resolveLeadId(sql, resolved.id ?? "");
+    if (!leadId) {
+      return NextResponse.json({ error: "Lead negăsit" }, { status: 404 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const notes = body.notes || "";
 
@@ -37,7 +44,7 @@ export async function POST(
           ELSE operator_notes || E'\n\n' || ${now} || ': ' || ${notes}
         END,
         updated_at = ${now}
-      WHERE id = ${params.id}
+      WHERE id = ${leadId}
       RETURNING id, call_attempts, operator_status
     `;
 
@@ -48,7 +55,7 @@ export async function POST(
     // Create lead event
     await sql`
       INSERT INTO lead_events (lead_id, type, metadata)
-      VALUES (${params.id}, 'OPERATOR_CALLED', ${JSON.stringify({ 
+      VALUES (${leadId}, 'OPERATOR_CALLED', ${JSON.stringify({ 
         call_attempts: result[0].call_attempts,
         notes: notes || null,
       })})

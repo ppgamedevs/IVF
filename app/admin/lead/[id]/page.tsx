@@ -69,11 +69,25 @@ interface LeadEvent {
   created_at: string;
 }
 
+const ADMIN_TOKEN_KEY = "fivmatch_admin_token";
+
 function LeadDetailPageContent() {
   const searchParams = useSearchParams();
   const params = useParams();
-  const token = searchParams.get("token");
+  const tokenFromUrl = searchParams.get("token");
+  const token = tokenFromUrl || (typeof window !== "undefined" ? sessionStorage.getItem(ADMIN_TOKEN_KEY) : null);
   const leadId = params.id as string;
+
+  // Persist token and clean URL so the long token is not in the address bar
+  useEffect(() => {
+    if (tokenFromUrl && typeof window !== "undefined") {
+      sessionStorage.setItem(ADMIN_TOKEN_KEY, tokenFromUrl);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("token");
+      const clean = url.pathname + (url.searchParams.toString() ? "?" + url.searchParams.toString() : "");
+      window.history.replaceState({}, "", clean);
+    }
+  }, [tokenFromUrl]);
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [events, setEvents] = useState<LeadEvent[]>([]);
@@ -325,7 +339,7 @@ Echipa FIV Match`;
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-4">
           <Link
-            href={`/admin?token=${token}`}
+            href="/admin"
             className="text-blue-600 hover:text-blue-800 text-sm"
           >
             ← Înapoi la listă

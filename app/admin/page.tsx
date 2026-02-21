@@ -26,11 +26,25 @@ interface Lead {
   clinic_email: string | null;
 }
 
+const ADMIN_TOKEN_KEY = "fivmatch_admin_token";
+
 function AdminPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const token = searchParams.get("token");
-  
+  const tokenFromUrl = searchParams.get("token");
+  const token = tokenFromUrl || (typeof window !== "undefined" ? sessionStorage.getItem(ADMIN_TOKEN_KEY) : null);
+
+  // Persist token and clean URL so the long token is not in the address bar
+  useEffect(() => {
+    if (tokenFromUrl && typeof window !== "undefined") {
+      sessionStorage.setItem(ADMIN_TOKEN_KEY, tokenFromUrl);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("token");
+      const clean = url.pathname + (url.searchParams.toString() ? "?" + url.searchParams.toString() : "");
+      window.history.replaceState({}, "", clean);
+    }
+  }, [tokenFromUrl]);
+
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [tierFilter, setTierFilter] = useState<string>("");
@@ -321,7 +335,7 @@ function AdminPageContent() {
                   <tr
                     key={lead.id}
                     className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => router.push(`/admin/lead/${lead.id}?token=${token}`)}
+                    onClick={() => router.push(`/admin/lead/${formatLeadId(lead.id)}`)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
                       {formatLeadId(lead.id)}

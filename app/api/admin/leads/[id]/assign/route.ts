@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { resolveLeadId } from "@/lib/resolve-lead-id";
 
 /**
  * POST /api/admin/leads/[id]/assign?token=...
- * Assigns lead to a clinic.
+ * Assigns lead to a clinic. [id] can be full UUID or shortId.
  * Body: { clinic_id: "uuid" }
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   const token = request.nextUrl.searchParams.get("token");
   const verifyToken = process.env.VERIFY_TOKEN;
@@ -19,6 +20,12 @@ export async function POST(
 
   try {
     const sql = getDb();
+    const resolved = await Promise.resolve(params);
+    const leadId = await resolveLeadId(sql, resolved.id ?? "");
+    if (!leadId) {
+      return NextResponse.json({ error: "Lead negăsit" }, { status: 404 });
+    }
+
     const body = await request.json();
     const { clinic_id } = body;
 
@@ -52,7 +59,7 @@ export async function POST(
         assigned_clinic_id = ${clinic_id},
         assigned_at = ${now},
         updated_at = ${now}
-      WHERE id = ${params.id}
+      WHERE id = ${leadId}
       RETURNING id, assigned_clinic_id, assigned_at
     `;
 
@@ -63,7 +70,7 @@ export async function POST(
     // Create lead event
     await sql`
       INSERT INTO lead_events (lead_id, type, metadata)
-      VALUES (${params.id}, 'ASSIGNED', ${JSON.stringify({ 
+      VALUES (${leadId}, 'ASSIGNED', ${JSON.stringify({ 
         clinic_id,
         clinic_name: clinic[0].name,
       })})

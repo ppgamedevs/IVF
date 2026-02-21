@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { resolveLeadId } from "@/lib/resolve-lead-id";
 import { computeLeadTier } from "@/lib/tiering";
 
 /**
  * POST /api/admin/leads/[id]/status?token=...
- * Updates operator_status and related fields.
+ * Updates operator_status and related fields. [id] can be full UUID or shortId.
  * Body: { status: "VERIFIED_READY" | "INVALID" | "LOW_INTENT_NURTURE", notes?: string }
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   const token = request.nextUrl.searchParams.get("token");
   const verifyToken = process.env.VERIFY_TOKEN;
@@ -18,13 +19,15 @@ export async function POST(
     return NextResponse.json({ error: "Neautorizat" }, { status: 403 });
   }
 
-  const leadId = typeof params.id === "string" ? params.id : params.id?.[0];
-  if (!leadId) {
-    return NextResponse.json({ error: "ID lead lipsă" }, { status: 400 });
-  }
-
   try {
     const sql = getDb();
+    const resolved = await Promise.resolve(params);
+    const idParam = typeof resolved.id === "string" ? resolved.id : resolved.id?.[0];
+    const leadId = await resolveLeadId(sql, idParam ?? "");
+    if (!leadId) {
+      return NextResponse.json({ error: "Lead negăsit" }, { status: 404 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const status = typeof body?.status === "string" ? body.status : null;
     const notes = typeof body?.notes === "string" ? body.notes : "";
@@ -59,7 +62,7 @@ export async function POST(
       const tieringResult = computeLeadTier({
         operator_status: status,
         urgency_level: lead.urgency_level,
-        consent_to_share: lead.consent_to_share,
+        consent_to_share: Boolean(lead.consent_to_share),
         female_age_exact: lead.female_age_exact,
         best_contact_method: lead.best_contact_method,
         availability_windows: lead.availability_windows,

@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { resolveLeadId } from "@/lib/resolve-lead-id";
 import { sendPremiumLeadEmail, type SendPremiumLeadEmailParams } from "@/lib/email";
 
 /**
  * POST /api/admin/leads/[id]/send?token=...
- * Sends premium lead sheet email to assigned clinic and marks lead as sent.
+ * Sends premium lead sheet email to assigned clinic. [id] can be full UUID or shortId.
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   const token = request.nextUrl.searchParams.get("token");
   const verifyToken = process.env.VERIFY_TOKEN;
@@ -19,6 +20,11 @@ export async function POST(
 
   try {
     const sql = getDb();
+    const resolved = await Promise.resolve(params);
+    const leadId = await resolveLeadId(sql, resolved.id ?? "");
+    if (!leadId) {
+      return NextResponse.json({ error: "Lead negăsit" }, { status: 404 });
+    }
 
     // Fetch lead with all Phase 2 fields including consent metadata
     const leadRows = await sql`
@@ -28,7 +34,7 @@ export async function POST(
         c.email as clinic_email
       FROM leads l
       LEFT JOIN clinics c ON l.assigned_clinic_id = c.id
-      WHERE l.id = ${params.id}
+      WHERE l.id = ${leadId}
         AND l.operator_status = 'VERIFIED_READY'
         AND l.assigned_clinic_id IS NOT NULL
         AND l.consent_to_share = true
@@ -66,14 +72,14 @@ export async function POST(
         operator_status = 'SENT_TO_CLINIC',
         sent_to_clinic_at = ${now},
         updated_at = ${now}
-      WHERE id = ${params.id}
+      WHERE id = ${leadId}
       RETURNING id, operator_status, sent_to_clinic_at
     `;
 
     // Create lead event
     await sql`
       INSERT INTO lead_events (lead_id, type, metadata)
-      VALUES (${params.id}, 'SENT_EMAIL', ${JSON.stringify({ 
+      VALUES (${leadId}, 'SENT_EMAIL', ${JSON.stringify({ 
         clinic_id: lead.assigned_clinic_id,
         clinic_email: lead.clinic_email,
         sent_at: now,
