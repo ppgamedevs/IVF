@@ -2,7 +2,10 @@
 
 FIV Match is an independent matching service between patients and private IVF (FIV) clinics in Romania. We help users submit a single free request and get contacted by suitable fertility clinics within 72 hours.
 
-Main topics: IVF, fertility clinics Romania, FIV treatment, fertility matching, confidential request.
+Country: Romania. Service area: Romania (nationwide).
+Contact: leads@fivmatch.ro
+
+Main topics: IVF, fertility clinics Romania, FIV treatment, FIV clinici România, fertilitate, fertility matching, confidential request, solicitare gratuită.
 
 Locale: Romanian (ro), English (en). Primary URL: https://fivmatch.ro/
 

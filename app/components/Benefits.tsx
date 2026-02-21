@@ -13,7 +13,7 @@ export default function Benefits() {
   const t = useTranslations("benefits");
 
   return (
-    <section className="bg-medical-bg">
+    <section id="cum-functioneaza" className="bg-medical-bg scroll-mt-20">
       <div className="section-padding">
         <div className="container-wide">
           <div className="text-center mb-14">

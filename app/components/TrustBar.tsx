@@ -16,7 +16,7 @@ export default function TrustBar() {
   const t = useTranslations("trust");
 
   return (
-    <section className="bg-white border-y border-medical-border">
+    <section id="clinici" className="bg-white border-y border-medical-border scroll-mt-20">
       <div className="container-wide section-padding !py-10 sm:!py-12">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-6">
           {trustKeys.map((item, i) => (

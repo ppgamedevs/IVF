@@ -5,7 +5,7 @@ export default function FinalCTA() {
   const t = useTranslations("finalCta");
 
   return (
-    <section className="bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900 relative overflow-hidden">
+    <section id="preturi" className="bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900 relative overflow-hidden scroll-mt-20">
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary-700/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-primary-600/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
