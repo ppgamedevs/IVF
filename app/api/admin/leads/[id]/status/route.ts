@@ -18,10 +18,16 @@ export async function POST(
     return NextResponse.json({ error: "Neautorizat" }, { status: 403 });
   }
 
+  const leadId = typeof params.id === "string" ? params.id : params.id?.[0];
+  if (!leadId) {
+    return NextResponse.json({ error: "ID lead lipsă" }, { status: 400 });
+  }
+
   try {
     const sql = getDb();
-    const body = await request.json();
-    const { status, notes } = body;
+    const body = await request.json().catch(() => ({}));
+    const status = typeof body?.status === "string" ? body.status : null;
+    const notes = typeof body?.notes === "string" ? body.notes : "";
 
     if (!status || !["VERIFIED_READY", "INVALID", "LOW_INTENT_NURTURE"].includes(status)) {
       return NextResponse.json(
@@ -37,7 +43,7 @@ export async function POST(
         female_age_exact, best_contact_method, availability_windows,
         has_recent_tests, tests_list, locale
       FROM leads
-      WHERE id = ${params.id}
+      WHERE id = ${leadId}
     `;
 
     if (currentLead.length === 0) {
@@ -99,7 +105,7 @@ export async function POST(
         lead_tier = ${tierUpdate.lead_tier ?? "D"},
         tier_reason = ${tierUpdate.tier_reason || null},
         updated_at = ${now}
-      WHERE id = ${params.id}
+      WHERE id = ${leadId}
       RETURNING id, operator_status, operator_verified_at, lead_tier, tier_reason
     `;
 
@@ -107,15 +113,19 @@ export async function POST(
       return NextResponse.json({ error: "Lead negăsit" }, { status: 404 });
     }
 
-    // Create lead event
-    await sql`
-      INSERT INTO lead_events (lead_id, type, metadata)
-      VALUES (${params.id}, 'STATUS_CHANGED', ${JSON.stringify({ 
-        old_status: lead.operator_status,
-        new_status: status,
-        notes: notes || null,
-      })})
-    `;
+    // Create lead event (non-fatal: status update already succeeded)
+    try {
+      await sql`
+        INSERT INTO lead_events (lead_id, type, metadata)
+        VALUES (${leadId}, 'STATUS_CHANGED', ${JSON.stringify({ 
+          old_status: lead.operator_status,
+          new_status: status,
+          notes: notes || null,
+        })})
+      `;
+    } catch (eventErr) {
+      console.warn("Could not create lead_events row:", eventErr);
+    }
 
     // If LOW_INTENT_NURTURE, trigger nurture enrollment
     if (status === "LOW_INTENT_NURTURE") {
@@ -126,7 +136,7 @@ export async function POST(
             nurture_stage = 1,
             nurture_next_at = ${now},
             nurture_completed = false
-          WHERE id = ${params.id}
+          WHERE id = ${leadId}
         `;
       } catch (err) {
         // Nurture columns might not exist, ignore

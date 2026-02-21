@@ -293,6 +293,11 @@ function AdminPageContent() {
           </div>
         </div>
 
+        {/* Tier D info: new leads stay D until operator verifies */}
+        <p className="text-sm text-gray-500 mb-2">
+          Lead-urile noi apar ca <strong>Tier D</strong> până când le verifici (în detaliu lead: butonul „Verifică Gata”). După verificare, tier-ul devine A, B sau C.
+        </p>
+
         {/* Leads Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
