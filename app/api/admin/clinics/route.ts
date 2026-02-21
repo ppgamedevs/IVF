@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const activeOnly = request.nextUrl.searchParams.get("active") === "true";
 
     const clinics = await sql`
-      SELECT id, name, email, city_coverage, active, notes, created_at, updated_at
+      SELECT id, name, email, phone, city_coverage, active, notes, created_at, updated_at
       FROM clinics
       ${activeOnly ? sql`WHERE active = true` : sql``}
       ORDER BY name ASC
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/admin/clinics?token=...
  * Creates a new clinic.
- * Body: { name, email, city_coverage?: string[], active?: boolean, notes?: string }
+ * Body: { name, email, phone?, city_coverage?: string[] | string, active?: boolean, notes?: string }
  */
 export async function POST(request: NextRequest) {
   const token = request.nextUrl.searchParams.get("token");
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, email, city_coverage, active, notes } = body;
+    const { name, email, phone, city_coverage, city, active, notes } = body;
 
     if (!name || !email) {
       return NextResponse.json(
@@ -60,17 +60,20 @@ export async function POST(request: NextRequest) {
 
     const sql = getDb();
     const now = new Date().toISOString();
-    const cityCoverageLiteral =
-      Array.isArray(city_coverage) && city_coverage.length > 0
-        ? "{" + city_coverage.map((c: string) => '"' + String(c).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"').join(",") + "}"
-        : "{}";
+    let cityArr: string[] = [];
+    if (Array.isArray(city_coverage) && city_coverage.length > 0) {
+      cityArr = city_coverage;
+    } else if (typeof city === "string" && city.trim()) {
+      cityArr = [city.trim()];
+    }
+    const phoneVal = phone && String(phone).trim() ? String(phone).trim() : null;
+    const activeVal = active !== false;
 
-    const result = await sql.query(
-      `INSERT INTO clinics (name, email, city_coverage, active, notes, created_at, updated_at)
-       VALUES ($1, $2, $3::text[], $4, $5, $6, $7)
-       RETURNING id, name, email, city_coverage, active, notes, created_at, updated_at`,
-      [name, email, cityCoverageLiteral, active !== false, notes || null, now, now]
-    );
+    const result = await sql`
+      INSERT INTO clinics (name, email, phone, city_coverage, active, notes, created_at, updated_at)
+      VALUES (${name}, ${email}, ${phoneVal}, ${cityArr}, ${activeVal}, ${notes || null}, ${now}, ${now})
+      RETURNING id, name, email, phone, city_coverage, active, notes, created_at, updated_at
+    `;
 
     return NextResponse.json({ clinic: result[0] }, { status: 201 });
   } catch (err) {

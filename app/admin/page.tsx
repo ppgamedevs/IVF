@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -193,9 +194,39 @@ function AdminPageContent() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Panou Operator - Lead-uri</h1>
-          <p className="text-sm text-gray-600">Total: {pagination.total} lead-uri</p>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-2xl font-bold text-gray-900">Panou Operator</h1>
+              <span className="text-gray-400">|</span>
+              <Link href="/admin" className="text-primary-600 font-medium">
+                Lead-uri
+              </Link>
+              <Link href="/admin/clinics" className="text-gray-500 hover:text-gray-700">
+                Clinici
+              </Link>
+            </div>
+            <p className="text-sm text-gray-600">Total: {pagination.total} lead-uri</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (!token) return;
+              if (!confirm("Golești toate lead-urile, evenimentele și clinicile? Acțiunea nu poate fi anulată.")) return;
+              fetch(`/api/admin/cleanup?token=${token}`, { method: "POST" })
+                .then((r) => r.json())
+                .then((data) => {
+                  if (data.success) {
+                    alert("Baza de date a fost golită.");
+                    loadLeads();
+                  } else alert(data.error || "Eroare");
+                })
+                .catch(() => alert("Eroare la golire"));
+            }}
+            className="px-3 py-1.5 text-sm border border-red-300 text-red-700 rounded-md hover:bg-red-50"
+          >
+            Golește baza de date
+          </button>
         </div>
 
         {/* Filters */}

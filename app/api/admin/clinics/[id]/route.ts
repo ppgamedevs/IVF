@@ -19,7 +19,7 @@ export async function GET(
   try {
     const sql = getDb();
     const clinics = await sql`
-      SELECT id, name, email, city_coverage, active, notes, created_at, updated_at
+      SELECT id, name, email, phone, city_coverage, active, notes, created_at, updated_at
       FROM clinics
       WHERE id = ${params.id}
     `;
@@ -41,7 +41,7 @@ export async function GET(
 /**
  * PUT /api/admin/clinics/[id]?token=...
  * Updates clinic.
- * Body: { name?, email?, city_coverage?, active?, notes? }
+ * Body: { name?, email?, phone?, city_coverage?, active?, notes? }
  */
 export async function PUT(
   request: NextRequest,
@@ -56,7 +56,7 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { name, email, city_coverage, active, notes } = body;
+    const { name, email, phone, city_coverage, active, notes } = body;
 
     const sql = getDb();
     const now = new Date().toISOString();
@@ -74,11 +74,16 @@ export async function PUT(
       updates.push(`email = $${paramIndex++}`);
       params.push(email);
     }
+    if (phone !== undefined) {
+      updates.push(`phone = $${paramIndex++}`);
+      params.push(phone && String(phone).trim() ? String(phone).trim() : null);
+    }
     if (city_coverage !== undefined) {
       updates.push(`city_coverage = $${paramIndex++}::text[]`);
+      const arr = Array.isArray(city_coverage) ? city_coverage : [];
       const pgArrayLiteral =
         "{" +
-        city_coverage.map((c: string) => '"' + String(c).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"').join(",") +
+        arr.map((c: string) => '"' + String(c).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"').join(",") +
         "}";
       params.push(pgArrayLiteral);
     }
@@ -106,7 +111,7 @@ export async function PUT(
       UPDATE clinics
       SET ${updates.join(", ")}
       WHERE id = $${paramIndex}
-      RETURNING id, name, email, city_coverage, active, notes, created_at, updated_at
+      RETURNING id, name, email, phone, city_coverage, active, notes, created_at, updated_at
     `;
 
     const result = await sql.query(query, params);
