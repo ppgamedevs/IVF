@@ -21,13 +21,12 @@ export default async function Home({
     "@type": "FAQPage",
     mainEntity: FAQ_KEYS.map((qKey) => {
       const aKey = qKey.replace("q", "a") as "a1" | "a2" | "a3" | "a4" | "a5";
+      const name = String(t(qKey)).trim() || "FAQ";
+      const text = String(t(aKey)).trim() || "—";
       return {
         "@type": "Question",
-        name: t(qKey),
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: t(aKey),
-        },
+        name,
+        acceptedAnswer: { "@type": "Answer", text },
       };
     }),
   };

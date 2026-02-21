@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { locales } from "@/i18n/routing";
+import { locales, defaultLocale } from "@/i18n/routing";
 import LegalPage from "../../components/LegalPage";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://fivmatch.ro";
+const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://fivmatch.ro").replace(/\/$/, "");
 
 export async function generateMetadata({
   params: { locale },
@@ -12,7 +12,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: "terms" });
 
-  const languages: Record<string, string> = {};
+  const languages: Record<string, string> = { "x-default": `${BASE_URL}/${defaultLocale}/terms` };
   for (const loc of locales) {
     languages[loc] = `${BASE_URL}/${loc}/terms`;
   }

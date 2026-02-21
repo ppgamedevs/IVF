@@ -11,9 +11,39 @@
   scroll-behavior: smooth;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Mobile-friendly tap targets: min 44px height for primary controls (WCAG 2.2) */
+button,
+[role="button"],
+input[type="submit"],
+input[type="button"] {
+  min-height: 44px;
+}
+
+select,
+textarea {
+  min-height: 44px;
+}
+
+/* Touch-friendly spacing for tap targets */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  a[class*="button"],
+  a[class*="btn"] {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
 }
 
 @layer components {

@@ -26,8 +26,22 @@ export default function CookieConsent() {
   useEffect(() => {
     const consent = getStoredConsent();
     if (!consent) {
-      const timer = setTimeout(() => setVisible(true), 1200);
-      return () => clearTimeout(timer);
+      let cancelled = false;
+      const show = () => {
+        if (!cancelled) setVisible(true);
+      };
+      if (typeof requestIdleCallback !== "undefined") {
+        const id = requestIdleCallback(show, { timeout: 1500 });
+        return () => {
+          cancelled = true;
+          cancelIdleCallback(id);
+        };
+      }
+      const id = setTimeout(show, 1200);
+      return () => {
+        cancelled = true;
+        clearTimeout(id);
+      };
     }
   }, []);
 

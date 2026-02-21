@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
@@ -14,8 +14,17 @@ const inter = Inter({
   display: "swap",
 });
 
-// Must match the exact site URL (including www if you use it) so canonical and hreflang are self-referential
-const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://fivmatch.ro").replace(/\/$/, "");
+// Must match the exact site URL (HTTPS, no trailing slash) so canonical and hreflang are correct
+const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://fivmatch.ro")
+  .replace(/\/$/, "")
+  .replace(/^http:\/\//i, "https://");
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#ffffff",
+};
 
 export async function generateMetadata({
   params: { locale },
@@ -25,6 +34,7 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "metadata" });
 
   const canonicalUrl = `${BASE_URL}/${locale}`;
+  // Self-referencing hreflang: current locale + all alternates + x-default
   const languageAlternates: Record<string, string> = {
     [locale]: canonicalUrl,
     "x-default": `${BASE_URL}/${defaultLocale}`,
@@ -121,17 +131,13 @@ export default async function LocaleLayout({
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
+      "@id": `${baseUrl}/#website`,
       name: "FIV Match",
       url: baseUrl,
       publisher: { "@id": organizationId },
       inLanguage: locale === "ro" ? "ro" : "en",
       description: webSiteDescription,
       areaServed: { "@type": "Country", name: "Romania" },
-      potentialAction: {
-        "@type": "SearchAction",
-        target: { "@type": "EntryPoint", urlTemplate: `${baseUrl}/${locale}#lead-form` },
-        "query-input": "required name=search_term_string",
-      },
     },
   ];
 

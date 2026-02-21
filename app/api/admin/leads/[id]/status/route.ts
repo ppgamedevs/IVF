@@ -91,20 +91,20 @@ export async function POST(
       };
     }
 
+    // Compute new operator_notes in JS to avoid Postgres "could not determine data type of parameter" (CASE with multiple params)
+    const existingNotes = lead.operator_notes ?? "";
+    const hasNewNotes = notes != null && String(notes).trim() !== "";
+    const newOperatorNotes = hasNewNotes
+      ? (existingNotes.trim() === "" ? notes : `${existingNotes}\n\n${now}: ${notes}`)
+      : existingNotes;
+
     // Update lead
     const result = await sql`
       UPDATE leads
       SET 
         operator_status = ${status},
         operator_verified_at = ${status === "VERIFIED_READY" ? now : null},
-        operator_notes = CASE
-          WHEN ${notes} IS NOT NULL AND ${notes} != '' THEN
-            CASE
-              WHEN operator_notes IS NULL OR operator_notes = '' THEN ${notes}
-              ELSE operator_notes || E'\n\n' || ${now} || ': ' || ${notes}
-            END
-          ELSE operator_notes
-        END,
+        operator_notes = ${newOperatorNotes},
         lead_tier = ${tierUpdate.lead_tier ?? "D"},
         tier_reason = ${tierUpdate.tier_reason || null},
         updated_at = ${now}
