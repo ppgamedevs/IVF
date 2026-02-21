@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "title": "Clinici FIV Romania - Gaseste clinica potrivita, rapid si confidential | FIV Match",
-    "description": "Trimite o solicitare gratuita si vei fi contactat de clinici private de FIV din Romania in maximum 24 de ore. Serviciu independent, date protejate GDPR.",
+    "title": "Clinici FIV Romania | Rapid și confidențial | FIV Match",
+    "description": "Trimite o solicitare gratuita si vei fi contactat de clinici private de FIV din Romania in maximum 72 de ore. Serviciu independent, date protejate GDPR.",
     "keywords": "FIV, clinici FIV Romania, fertilitate, tratament FIV, clinici fertilitate, FIV Match, inseminare in vitro"
   },
   "header": {
@@ -12,7 +12,7 @@
     "badge": "Serviciu independent de potrivire intre pacienti si clinici private",
     "title": "Gaseste clinica potrivita pentru FIV,",
     "titleHighlight": "rapid si confidential.",
-    "subtitle": "Trimite solicitarea ta si vei fi contactat de clinici private din Romania in maximum 24 de ore.",
+    "subtitle": "Gasesti clinica potrivita pentru FIV, rapid si confidențial: trimite solicitarea ta si vei fi contactat de clinici private din Romania in maximum 72 de ore.",
     "cta": "Trimite solicitarea",
     "trustLine": "Serviciu gratuit pentru pacienti · Date protejate · Fara obligatii"
   },
@@ -116,7 +116,7 @@
     "submitting": "Se trimite...",
     "submitHelper": "Solicitările cu intenție clară sunt contactate cu prioritate.",
     "successTitle": "Solicitarea ta a fost trimisă.",
-    "successMessage": "Vei fi contactat de clinicile potrivite în maximum 24 de ore.",
+    "successMessage": "Vei fi contactat de clinicile potrivite în maximum 72 de ore.",
     "errorFirstName": "Prenumele este obligatoriu",
     "errorLastName": "Numele de familie este obligatoriu",
     "errorPhone": "Numărul de telefon este obligatoriu",
@@ -199,6 +199,7 @@
     "tagline": "Serviciu independent de potrivire intre pacienti si clinici private de fertilitate din Romania.",
     "disclaimer": "FIV Match nu este o clinica medicala si nu ofera sfaturi, diagnostic sau tratament medical. Informatiile prezentate pe acest site au caracter exclusiv informativ. Consultati intotdeauna un medic specialist pentru decizii medicale.",
     "linksTitle": "Legal",
+    "cta": "Trimite solicitarea",
     "privacy": "Politica de Confidentialitate",
     "terms": "Termeni si Conditii",
     "cookiePolicy": "Politica de Cookie-uri",

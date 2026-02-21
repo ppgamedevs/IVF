@@ -29,6 +29,9 @@ export default function Footer() {
           <div>
             <h3 className="text-sm font-semibold text-medical-heading mb-3">{t("linksTitle")}</h3>
             <nav className="flex flex-col gap-2">
+              <Link href="#lead-form" className="text-sm text-medical-muted hover:text-primary-600 transition-colors">
+                {t("cta")}
+              </Link>
               <Link href={`/${locale}/privacy`} className="text-sm text-medical-muted hover:text-primary-600 transition-colors">
                 {t("privacy")}
               </Link>

@@ -93,6 +93,7 @@ const labelClasses = "block text-sm font-medium text-medical-text mb-1.5";
 export default function LeadForm() {
   const t = useTranslations("form");
   const locale = useLocale();
+  const successSectionRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -307,9 +308,16 @@ export default function LeadForm() {
     if (serverError) setServerError(null);
   }
 
+  // Scroll success message into view so it's at the top of the viewport after submit
+  useEffect(() => {
+    if (submitted && successSectionRef.current) {
+      successSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [submitted]);
+
   if (submitted) {
     return (
-      <section id="lead-form" className="bg-white">
+      <section id="lead-form" ref={successSectionRef} className="bg-white scroll-mt-20">
         <div className="section-padding">
           <div className="container-narrow">
             <div className="text-center py-12 sm:py-16">

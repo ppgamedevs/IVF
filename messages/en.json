@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "title": "IVF Clinics in Romania - Find the Right Clinic, Fast and Confidential | FIV Match",
-    "description": "Submit a free request and private IVF clinics in Romania will contact you within 24 hours. Independent matching service, GDPR-protected data.",
+    "title": "IVF Clinics Romania | Fast & Confidential | FIV Match",
+    "description": "Submit a free request and private IVF clinics in Romania will contact you within 72 hours. Independent matching service, GDPR-protected data.",
     "keywords": "IVF, IVF clinics Romania, fertility treatment, fertility clinics, FIV Match, in vitro fertilization"
   },
   "header": {
@@ -12,7 +12,7 @@
     "badge": "Independent patient-clinic matching service",
     "title": "Find the right IVF clinic,",
     "titleHighlight": "quickly and confidentially.",
-    "subtitle": "Submit your request and private clinics in Romania will contact you within 24 hours.",
+    "subtitle": "Find the right IVF clinic, quickly and confidentially: submit your request and private clinics in Romania will contact you within 72 hours.",
     "cta": "Submit your request",
     "trustLine": "Free for patients · Data protected · No obligation"
   },
@@ -116,7 +116,7 @@
     "submitting": "Sending...",
     "submitHelper": "Requests with clear intent are contacted with priority.",
     "successTitle": "Your request has been submitted.",
-    "successMessage": "You will be contacted by matching clinics within 24 hours.",
+    "successMessage": "You will be contacted by matching clinics within 72 hours.",
     "errorFirstName": "First name is required",
     "errorLastName": "Last name is required",
     "errorPhone": "Phone number is required",
@@ -199,6 +199,7 @@
     "tagline": "Independent matching service between patients and private fertility clinics in Romania.",
     "disclaimer": "FIV Match is not a medical clinic and does not provide medical advice, diagnosis, or treatment. The information on this site is for informational purposes only. Always consult a qualified medical professional for medical decisions.",
     "linksTitle": "Legal",
+    "cta": "Submit your request",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
     "cookiePolicy": "Cookie Policy",

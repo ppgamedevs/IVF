@@ -14,7 +14,8 @@ const inter = Inter({
   display: "swap",
 });
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://fivmatch.ro";
+// Must match the exact site URL (including www if you use it) so canonical and hreflang are self-referential
+const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://fivmatch.ro").replace(/\/$/, "");
 
 export async function generateMetadata({
   params: { locale },
@@ -23,11 +24,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: "metadata" });
 
-  const languages: Record<string, string> = {};
+  const canonicalUrl = `${BASE_URL}/${locale}`;
+  const languageAlternates: Record<string, string> = {
+    [locale]: canonicalUrl,
+    "x-default": `${BASE_URL}/${defaultLocale}`,
+  };
   for (const loc of locales) {
-    languages[loc] = `${BASE_URL}/${loc}`;
+    if (loc !== locale) languageAlternates[loc] = `${BASE_URL}/${loc}`;
   }
-  languages["x-default"] = `${BASE_URL}/${defaultLocale}`;
 
   const ogLocale = locale === "ro" ? "ro_RO" : "en_US";
   const ogAlternateLocales = locales
@@ -40,8 +44,12 @@ export async function generateMetadata({
     description: t("description"),
     keywords: t("keywords"),
     alternates: {
-      canonical: `${BASE_URL}/${locale}`,
-      languages,
+      canonical: canonicalUrl,
+      languages: languageAlternates,
+    },
+    icons: {
+      icon: "/icon.svg",
+      apple: "/icon.svg",
     },
     openGraph: {
       title: t("title"),
@@ -86,30 +94,55 @@ export default async function LocaleLayout({
   validateLocale(locale);
   const messages = await getMessages();
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fivmatch.ro";
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "FIV Match",
-    url: baseUrl,
-    inLanguage: locale === "ro" ? "ro" : "en",
-    description: locale === "ro"
-      ? "Serviciu de potrivire între pacienți și clinici private FIV din România. Solicitare gratuită, contact în 24 de ore."
-      : "Matching service between patients and private IVF clinics in Romania. Free request, contact within 24 hours.",
-    areaServed: { "@type": "Country", name: "Romania" },
-    potentialAction: {
-      "@type": "SearchAction",
-      target: { "@type": "EntryPoint", urlTemplate: `${baseUrl}/${locale}#lead-form` },
-      "query-input": "required name=search_term_string",
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://fivmatch.ro").replace(/\/$/, "");
+  const webSiteDescription =
+    locale === "ro"
+      ? "Serviciu de potrivire între pacienți și clinici private FIV din România. Solicitare gratuită, contact în 72 de ore."
+      : "Matching service between patients and private IVF clinics in Romania. Free request, contact within 72 hours.";
+
+  const organizationId = `${baseUrl}/#organization`;
+  const jsonLdGraph = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": organizationId,
+      name: "FIV Match",
+      url: baseUrl,
+      logo: `${baseUrl}/icon.svg`,
+      description: webSiteDescription,
+      areaServed: { "@type": "Country", name: "Romania" },
+      contactPoint: {
+        "@type": "ContactPoint",
+        email: "contact@fivmatch.ro",
+        contactType: "customer service",
+        areaServed: "RO",
+      },
     },
-  };
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "FIV Match",
+      url: baseUrl,
+      publisher: { "@id": organizationId },
+      inLanguage: locale === "ro" ? "ro" : "en",
+      description: webSiteDescription,
+      areaServed: { "@type": "Country", name: "Romania" },
+      potentialAction: {
+        "@type": "SearchAction",
+        target: { "@type": "EntryPoint", urlTemplate: `${baseUrl}/${locale}#lead-form` },
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ];
 
   return (
     <html lang={locale} className={inter.variable}>
       <head>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({ "@context": "https://schema.org", "@graph": jsonLdGraph }),
+          }}
         />
       </head>
       <body className="font-sans antialiased bg-white text-medical-heading">
