@@ -122,20 +122,19 @@ export function trackCtaClick(ctaLocation: string) {
 }
 
 /**
- * Google Ads conversion event - fires alongside form_submitted.
- * Use this as your primary Google Ads conversion action when importing
- * via the Google Ads tag (not GA4 import).
- *
- * To set up: Google Ads > Tools > Conversions > New > Website >
- *   Use Google tag > Event snippet > paste "conversion" event name.
+ * Google Ads "Submit lead form" conversion – Event Snippet.
+ * ID 17961772126, label dmEqCMKy-vobEN7I6_RC.
+ * Must appear in site source for the conversion to show as Active.
+ */
+const GOOGLE_ADS_CONVERSION_SEND_TO = "AW-17961772126/dmEqCMKy-vobEN7I6_RC";
+
+/**
+ * Google Ads conversion event - fires when lead form is successfully submitted.
+ * Uses the exact ID and label from Google Ads so "Submit lead form" stays Active.
  */
 export function trackConversion() {
-  const sendTo = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID
-    ? `${process.env.NEXT_PUBLIC_GOOGLE_ADS_ID}/${process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL}`
-    : undefined;
-
-  gtag("event", "conversion", { send_to: sendTo });
-  pushToDataLayer("ads_conversion", { send_to: sendTo });
+  gtag("event", "conversion", { send_to: GOOGLE_ADS_CONVERSION_SEND_TO });
+  pushToDataLayer("ads_conversion", { send_to: GOOGLE_ADS_CONVERSION_SEND_TO });
 }
 
 /**
