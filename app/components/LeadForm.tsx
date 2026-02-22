@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, type FormEvent } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
 import FormSelect from "./FormSelect";
 import {
   trackFormStart,
@@ -93,9 +94,8 @@ const labelClasses = "block text-sm font-medium text-medical-text mb-1.5";
 export default function LeadForm() {
   const t = useTranslations("form");
   const locale = useLocale();
-  const successSectionRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const [formData, setFormData] = useState<FormData>(initialFormData);
-  const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
@@ -287,7 +287,7 @@ export default function LeadForm() {
       });
       trackConversion();
 
-      setSubmitted(true);
+      router.push(`/${locale}/thank-you`);
     } catch {
       setServerError(t("errorNetwork"));
     } finally {
@@ -308,41 +308,10 @@ export default function LeadForm() {
     if (serverError) setServerError(null);
   }
 
-  // Scroll success message into view so it's at the top of the viewport after submit
-  useEffect(() => {
-    if (submitted && successSectionRef.current) {
-      successSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [submitted]);
-
-  if (submitted) {
-    return (
-      <section id="lead-form" ref={successSectionRef} className="bg-white scroll-mt-20">
-        <div className="section-padding">
-          <div className="container-narrow">
-            <div className="text-center py-12 sm:py-16">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-5 flex items-center justify-center rounded-full bg-green-50">
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-green-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-medical-heading mb-3">
-                {t("successTitle")}
-              </h2>
-              <p className="text-base sm:text-lg text-medical-muted max-w-md mx-auto">
-                {t("successMessage")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   const showUrgencyNudge = formData.urgencyLevel === "INFO_ONLY" || formData.urgencyLevel === "LATER_6_12";
 
   return (
-    <section id="lead-form" className="bg-white">
+    <section id="lead-form" className="bg-white scroll-mt-20">
       <div className="px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
         <div className="container-narrow px-0 sm:px-0">
           <div className="text-center mb-8 sm:mb-10">
