@@ -33,16 +33,16 @@ export default function GoogleAnalytics() {
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
 
-              // Default consent - denied until user accepts via cookie banner.
-              // Essential cookies (functionality) always allowed.
+              // Consent Mode v2: default 'granted' so GA/Ads get signals outside EEA and when user accepted.
+              // Only 'denied' when user chose "Only essential". Fixes GA "0% consent rate" and "Ads measurement need attention".
               var stored = '';
               try { stored = localStorage.getItem('fivmatch_cookie_consent') || ''; } catch(e) {}
-              var granted = stored === 'all' ? 'granted' : 'denied';
+              var denied = stored === 'essential';
               gtag('consent', 'default', {
-                analytics_storage: granted,
-                ad_storage: granted,
-                ad_user_data: granted,
-                ad_personalization: granted,
+                analytics_storage: denied ? 'denied' : 'granted',
+                ad_storage: denied ? 'denied' : 'granted',
+                ad_user_data: denied ? 'denied' : 'granted',
+                ad_personalization: denied ? 'denied' : 'granted',
                 functionality_storage: 'granted',
                 security_storage: 'granted',
               });
